@@ -69,6 +69,9 @@
   
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Accessibility focus ring */
+  --focus-ring: 0 0 0 3px #fff, 0 0 0 6px #1EB53A;
 }
 
 /* ============================================
@@ -128,6 +131,54 @@ img {
   max-width: 100%;
   height: auto;
   display: block;
+}
+
+/* ============================================
+   ACCESSIBILITY - SKIP LINK & UTILITIES
+   ============================================ */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background: #1EB53A;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  z-index: 10000;
+  text-decoration: none;
+  transition: top 0.2s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+.skip-link:focus {
+  top: 16px;
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Screen reader only - visually hidden but available to AT */
+.sr-only,
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Show on focus (for skip links etc) */
+.sr-only-focusable:focus,
+.sr-only-focusable:active {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
 }
 
 /* ============================================
@@ -197,11 +248,14 @@ header {
   color: #1F2937;
   font-weight: 500;
   font-size: 0.9rem;
-  padding: 6px 0;
+  padding: 8px 4px;
   border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
   text-decoration: none;
   white-space: nowrap;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .nav-links a:hover,
 .nav-links a.active {
@@ -238,6 +292,7 @@ button[type="submit"],
   transition: all var(--transition);
   text-decoration: none;
   min-height: 48px;
+  min-width: 48px;
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(30, 181, 58, 0.3);
 }
@@ -280,12 +335,12 @@ button[type="submit"]:hover,
 .nav-actions .btn-ghost {
   padding: 8px 18px;
   font-size: 0.85rem;
-  min-height: 40px;
+  min-height: 44px;
 }
 .nav-actions .btn-primary {
   padding: 8px 22px;
   font-size: 0.85rem;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 /* ============================================
@@ -454,6 +509,7 @@ button[type="submit"]:hover,
   font-size: 0.95rem;
   text-decoration: none;
   transition: all 0.3s;
+  min-height: 48px;
 }
 .btn-cute-primary {
   background: var(--primary-gradient);
@@ -550,6 +606,9 @@ button[type="submit"]:hover,
   text-decoration: none;
   font-size: 0.95rem;
   transition: color 0.2s;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .footer-links a:hover {
   color: #4ADE80;
@@ -666,7 +725,7 @@ button[type="submit"]:hover,
   .nav-actions .btn-ghost { display: none; }
   .nav-inner { padding: 10px 16px; min-height: 60px; }
   .logo { font-size: 1.1rem; }
-  .nav-actions .btn-primary { padding: 7px 16px; font-size: 0.8rem; min-height: 36px; }
+  .nav-actions .btn-primary { padding: 7px 16px; font-size: 0.8rem; min-height: 44px; }
   .page-content { padding: 28px 16px; }
   .site-banner { padding: 24px 20px; }
   .footer-grid { grid-template-columns: 1fr; gap: 24px; text-align: center; }
@@ -682,21 +741,43 @@ button[type="submit"]:hover,
   .btn-primary, .btn-ghost {
     padding: 10px 20px;
     font-size: 0.85rem;
-    min-height: 42px;
+    min-height: 44px;
   }
   .feature-grid-cute { grid-template-columns: 1fr; }
 }
 
 /* ============================================
-   ACCESSIBILITY
+   ACCESSIBILITY - FOCUS, CONTRAST, MOTION
    ============================================ */
+
+/* Strong visible focus for keyboard users */
 a:focus-visible,
 button:focus-visible,
-input:focus-visible {
-  outline: 3px solid var(--primary);
-  outline-offset: 2px;
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #1EB53A;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(30, 181, 58, 0.25);
 }
 
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  :root {
+    --primary: #0D7A28;
+    --dark-text: #000;
+    --muted: #333;
+  }
+  .btn-primary, .btn-ghost, .nav-links a {
+    border-width: 2px;
+  }
+  a {
+    text-decoration: underline;
+  }
+}
+
+/* Reduced motion - respect user preference */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -704,5 +785,71 @@ input:focus-visible {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-fade-up {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* Ensure sufficient color contrast for text */
+.site-footer a:focus-visible {
+  outline-color: #4ADE80;
+  color: #fff;
+}
+
+/* Form accessibility */
+label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--dark-text);
+}
+
+input:invalid:not(:placeholder-shown),
+textarea:invalid:not(:placeholder-shown) {
+  border-color: #EF4444;
+}
+
+input:focus:invalid,
+textarea:focus:invalid {
+  outline-color: #EF4444;
+  box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.2);
+}
+
+/* Error message styling */
+.field-error,
+[role="alert"] {
+  color: #B91C1C;
+  font-size: 0.9rem;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Touch target minimum (WCAG 2.5.5) */
+button,
+a.btn-primary,
+a.btn-ghost,
+.nav-links a,
+.footer-links a {
+  min-height: 44px;
+}
+
+/* Print styles for accessibility */
+@media print {
+  .skip-link,
+  header,
+  .site-footer,
+  #preloader {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  a {
+    text-decoration: underline;
+    color: #000;
   }
 }
