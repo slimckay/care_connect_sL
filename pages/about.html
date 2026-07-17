@@ -65,17 +65,20 @@
 </head>
 <body>
 
+<!-- Skip to main content (keyboard / screen reader) -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <!-- ===== HEADER ===== -->
 <header role="banner">
   <div class="nav-inner">
-    <a href="/" class="logo">❤️ Care<span class="accent">Connect</span> SL</a>
+    <a href="/" class="logo" aria-label="Care Connect SL Home">❤️ Care<span class="accent">Connect</span> SL</a>
     <nav aria-label="Main navigation">
       <ul class="nav-links">
         <li><a href="/">Home</a></li>
         <li><a href="/pages/doctors.php">Find Care</a></li>
         <li><a href="/pages/hospitals.html">Clinics</a></li>
         <li><a href="/pages/referral.html">Referrals</a></li>
-        <li><a href="/pages/about.html" class="active">About</a></li>
+        <li><a href="/pages/about.html" class="active" aria-current="page">About</a></li>
         <li><a href="/pages/contact.html">Contact</a></li>
         <li><a href="/ai-chat.php" style="color:#1EB53A;font-weight:600;">💬 AI Assistant</a></li>
       </ul>
@@ -88,56 +91,56 @@
 </header>
 
 <!-- ===== HERO ===== -->
-<section class="about-hero">
-  <h1>About Care Connect SL</h1>
+<section class="about-hero" aria-labelledby="about-heading">
+  <h1 id="about-heading">About Care Connect SL</h1>
   <p>Care Connect is a community-first referral platform helping families access home visits, clinical referrals, and social support across Sierra Leone.</p>
 </section>
 
 <!-- ===== MAIN CONTENT ===== -->
-<main class="page-content" style="padding: 48px 24px; max-width: 900px; margin: 0 auto;">
+<main id="main-content" class="page-content" style="padding: 48px 24px; max-width: 900px; margin: 0 auto;" tabindex="-1">
 
   <!-- Mission -->
-  <div class="card glass" style="margin-bottom:28px; padding:32px;">
-    <h2 style="margin-bottom:12px;">🎯 Our Mission</h2>
+  <section class="card glass" style="margin-bottom:28px; padding:32px;" aria-labelledby="mission-heading">
+    <h2 id="mission-heading" style="margin-bottom:12px;">🎯 Our Mission</h2>
     <p style="color:var(--muted); font-size:1.05rem;">We connect patients, caregivers, and health providers so that medical referrals are fast, local, and trusted. Built by Sierra Leoneans for Sierra Leoneans.</p>
-  </div>
+  </section>
 
   <!-- What We Offer -->
-  <div class="card glass" style="margin-bottom:28px; padding:32px;">
-    <h2 style="margin-bottom:16px;">📋 What We Offer</h2>
+  <section class="card glass" style="margin-bottom:28px; padding:32px;" aria-labelledby="offer-heading">
+    <h2 id="offer-heading" style="margin-bottom:16px;">📋 What We Offer</h2>
     <ul style="padding-left:20px; color:var(--muted); line-height:1.9;">
       <li>Patient referrals to clinics and hospitals</li>
       <li>Home-based case tracking and support</li>
       <li>Community provider coordination</li>
       <li><strong style="color:var(--primary);">🤖 AI Health Assistant</strong> — 24/7 guidance</li>
     </ul>
-  </div>
+  </section>
 
   <!-- Commission Section -->
-  <div class="card glass" style="margin-bottom:28px; padding:32px;">
-    <h2 style="margin-bottom:12px;">💰 Our Commission Structure</h2>
+  <section class="card glass" style="margin-bottom:28px; padding:32px;" aria-labelledby="commission-heading">
+    <h2 id="commission-heading" style="margin-bottom:12px;">💰 Our Commission Structure</h2>
     <p style="color:var(--muted); margin-bottom:8px;">We charge a small commission to sustain the platform and keep our services running.</p>
     <div class="commission-grid">
       <div class="commission-card">
-        <span style="font-size:2.8rem;">👨‍⚕️</span>
+        <span style="font-size:2.8rem;" aria-hidden="true">👨‍⚕️</span>
         <h3 style="margin:10px 0 4px; font-size:1.15rem;">Doctors</h3>
-        <p class="rate green">15%</p>
+        <p class="rate green" aria-label="15 percent">15%</p>
         <p style="color:var(--muted);font-size:0.9rem;">Commission on referrals</p>
       </div>
       <div class="commission-card">
-        <span style="font-size:2.8rem;">🏥</span>
+        <span style="font-size:2.8rem;" aria-hidden="true">🏥</span>
         <h3 style="margin:10px 0 4px; font-size:1.15rem;">Clinics & Hospitals</h3>
-        <p class="rate blue">20%</p>
+        <p class="rate blue" aria-label="20 percent">20%</p>
         <p style="color:var(--muted);font-size:0.9rem;">Commission on referrals</p>
       </div>
     </div>
     <p style="margin-top:20px;color:var(--muted);font-size:0.95rem;">💡 These commissions help us maintain the platform, support community health workers, and keep the service <strong style="color:var(--primary);">100% free for patients</strong>.</p>
     <p style="color:var(--muted);font-size:0.95rem; margin-top:8px;">📋 Full details in our <a href="/terms.html#commission-terms-title" style="font-weight:600; color:var(--primary);">Terms and Conditions</a>.</p>
-  </div>
+  </section>
 
   <!-- AI Section -->
-  <div class="card glass" style="padding:32px; background:linear-gradient(135deg,rgba(30,181,58,0.06),rgba(0,0,205,0.06)); border:1px solid rgba(30,181,58,0.12);">
-    <h2 style="margin-bottom:12px;">🤖 Meet CareConnect AI</h2>
+  <section class="card glass" style="padding:32px; background:linear-gradient(135deg,rgba(30,181,58,0.06),rgba(0,0,205,0.06)); border:1px solid rgba(30,181,58,0.12);" aria-labelledby="ai-heading">
+    <h2 id="ai-heading" style="margin-bottom:12px;">🤖 Meet CareConnect AI</h2>
     <p style="color:var(--muted); margin-bottom:12px;">Our intelligent AI assistant is here to help you:</p>
     <ul style="padding-left:20px; color:var(--muted); line-height:1.9; margin-bottom:20px;">
       <li>Understand your symptoms</li>
@@ -147,15 +150,15 @@
     </ul>
     <a href="/ai-chat.php" class="btn-primary" style="display:inline-flex;">💬 Chat with AI Now →</a>
     <p style="font-size:0.85rem;color:var(--muted);margin-top:12px;">Powered by OpenRouter • Available 24/7</p>
-  </div>
+  </section>
 
 </main>
 
 <!-- ===== FOOTER ===== -->
-<footer class="site-footer">
+<footer class="site-footer" role="contentinfo">
   <div class="footer-grid">
     <div>
-      <a href="/" class="logo">Care<span class="accent">Connect</span> SL</a>
+      <a href="/" class="logo" aria-label="Care Connect SL Home">Care<span class="accent">Connect</span> SL</a>
       <p style="margin-top:8px; color:#94A3B8; font-size:0.95rem;">Home-based care referrals across Sierra Leone.</p>
     </div>
     <div>
