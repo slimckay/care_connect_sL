@@ -1,0 +1,7 @@
+{
+    "name": "careconnect-sl/website",
+    "description": "Care Connect SL Healthcare Platform",
+    "require": {
+        "php": "^8.0"
+    }
+}
