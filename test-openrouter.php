@@ -4,7 +4,7 @@
  */
 
 // ⚠️ REPLACE WITH YOUR ACTUAL API KEY
-$api_key = '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';
+$api_key = '';
 
 $url = 'https://openrouter.ai/api/v1/chat/completions';
 
