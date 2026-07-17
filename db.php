@@ -1,7 +1,7 @@
 <?php
 /**
- * Database Configuration & Connection
- * Care Connect SL - Secure Database Setup
+ * Database Configuration - PRODUCTION (Render + Aiven)
+ * Reads credentials from environment variables
  */
 
 // Start session if not already started
@@ -9,13 +9,19 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Database credentials
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'careconnect_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');  // Set your password for production
+// ============================================
+// READ FROM ENVIRONMENT VARIABLES (set in Render)
+// ============================================
+$host = getenv('DB_HOST') ?: 'localhost';
+$port = getenv('DB_PORT') ?: '3306';
+$name = getenv('DB_NAME') ?: 'careconnect_db';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
 
-// Connection options
+// Build DSN with port
+$dsn = "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4";
+
+// PDO options
 $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -25,127 +31,20 @@ $options = [
 ];
 
 try {
-    // First, connect without database to create it if needed
-    $conn = new PDO(
-        "mysql:host=" . DB_HOST . ";charset=utf8mb4",
-        DB_USER,
-        DB_PASS,
-        $options
-    );
-    
-    // Check if database exists, create if not
-    $checkDb = $conn->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" . DB_NAME . "'");
-    if ($checkDb->rowCount() === 0) {
-        $conn->exec("CREATE DATABASE " . DB_NAME . " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        $conn->exec("USE " . DB_NAME);
-        
-        // Create tables
-        $conn->exec("
-            CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                email VARCHAR(100) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                role ENUM('patient', 'doctor', 'hospital', 'admin') DEFAULT 'patient',
-                status ENUM('active', 'inactive', 'banned') DEFAULT 'active',
-                email_verified BOOLEAN DEFAULT FALSE,
-                verification_token VARCHAR(64) NULL,
-                reset_token VARCHAR(64) NULL,
-                reset_token_expires DATETIME NULL,
-                last_login DATETIME NULL,
-                ip_address VARCHAR(45) NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ");
-        
-        $conn->exec("
-            CREATE TABLE IF NOT EXISTS provider_profiles (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                specialty VARCHAR(100) NULL,
-                qualifications TEXT NULL,
-                experience_years INT DEFAULT 0,
-                clinic_name VARCHAR(200) NULL,
-                clinic_address VARCHAR(255) NULL,
-                clinic_phone VARCHAR(50) NULL,
-                consultation_fee DECIMAL(10,2) DEFAULT 0,
-                is_accepting_patients BOOLEAN DEFAULT TRUE,
-                national_id VARCHAR(50) NULL,
-                medical_license VARCHAR(50) NULL,
-                bio TEXT NULL,
-                profile_photo VARCHAR(255) NULL,
-                id_photo VARCHAR(255) NULL,
-                license_photo VARCHAR(255) NULL,
-                verification_status ENUM('pending', 'verified', 'rejected', 'not_submitted') DEFAULT 'not_submitted',
-                verified_at DATETIME NULL,
-                verified_by INT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        ");
-        
-        $conn->exec("
-            CREATE TABLE IF NOT EXISTS referrals (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                patient_name VARCHAR(100) NOT NULL,
-                age INT NULL,
-                contact VARCHAR(100) NOT NULL,
-                location VARCHAR(200) NOT NULL,
-                preferred_clinic VARCHAR(100) NULL,
-                medical_condition TEXT NOT NULL,
-                referrer VARCHAR(50) DEFAULT 'self',
-                assigned_to INT NULL,
-                status ENUM('pending', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending',
-                ip_address VARCHAR(45) NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        ");
-        
-        $conn->exec("
-            CREATE TABLE IF NOT EXISTS ai_conversations (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NULL,
-                user_message TEXT NOT NULL,
-                ai_response TEXT NOT NULL,
-                source VARCHAR(50) DEFAULT 'api',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-            )
-        ");
-        
-        $conn->exec("
-            CREATE TABLE IF NOT EXISTS activity_logs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NULL,
-                action VARCHAR(100) NOT NULL,
-                details TEXT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ");
-        
-        // Create admin user if none exists
-        $checkAdmin = $conn->query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
-        if ($checkAdmin->rowCount() === 0) {
-            $hashed = password_hash('Admin123!', PASSWORD_DEFAULT);
-            $conn->exec("
-                INSERT INTO users (name, email, password, role, status, email_verified) 
-                VALUES ('System Admin', 'admin@careconnect.sl', '$hashed', 'admin', 'active', 1)
-            ");
-        }
-    } else {
-        // Database exists, use it
-        $conn->exec("USE " . DB_NAME);
-    }
-    
+    $conn = new PDO($dsn, $user, $pass, $options);
+    // Uncomment for debugging (remove in production)
+    // error_log("✅ Database connected successfully");
 } catch (PDOException $e) {
     error_log("Database Connection Error: " . $e->getMessage());
     die("<h2>Service Unavailable</h2><p>We're experiencing technical difficulties. Please try again later.</p>");
 }
 
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
 /**
- * Helper function to execute prepared statements
+ * Execute a prepared statement and return the statement object
  */
 function dbQuery($sql, $params = []) {
     global $conn;
@@ -155,7 +54,7 @@ function dbQuery($sql, $params = []) {
 }
 
 /**
- * Get single record
+ * Fetch a single record
  */
 function dbFetchOne($sql, $params = []) {
     $stmt = dbQuery($sql, $params);
@@ -163,7 +62,7 @@ function dbFetchOne($sql, $params = []) {
 }
 
 /**
- * Get multiple records
+ * Fetch all records
  */
 function dbFetchAll($sql, $params = []) {
     $stmt = dbQuery($sql, $params);
@@ -171,7 +70,7 @@ function dbFetchAll($sql, $params = []) {
 }
 
 /**
- * Insert record and return last insert ID
+ * Insert a record and return the last insert ID
  */
 function dbInsert($sql, $params = []) {
     global $conn;
@@ -191,7 +90,7 @@ function sanitizeInput($data) {
 }
 
 /**
- * Generate CSRF token
+ * Generate a CSRF token
  */
 function generateCSRFToken() {
     if (session_status() === PHP_SESSION_NONE) {
@@ -204,7 +103,7 @@ function generateCSRFToken() {
 }
 
 /**
- * Verify CSRF token
+ * Verify a CSRF token
  */
 function verifyCSRFToken($token) {
     if (session_status() === PHP_SESSION_NONE) {
@@ -217,13 +116,12 @@ function verifyCSRFToken($token) {
 }
 
 /**
- * Rate limiting - prevent brute force
+ * Rate limiting – prevent brute force
  */
 function checkRateLimit($key, $limit = 5, $window = 300) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    
     $sessionKey = 'rate_limit_' . $key;
     $timeKey = 'rate_limit_time_' . $key;
     
@@ -248,3 +146,4 @@ function checkRateLimit($key, $limit = 5, $window = 300) {
     $_SESSION[$sessionKey]++;
     return true;
 }
+?>
