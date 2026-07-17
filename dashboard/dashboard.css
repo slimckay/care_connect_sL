@@ -1,0 +1,358 @@
+/* Dashboard Styles - Care Connect SL */
+
+.dashboard-main {
+    background: var(--light);
+    min-height: calc(100vh - 200px);
+    padding: 32px 0;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* Welcome Section */
+.dashboard-welcome {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 32px 36px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 32px;
+    border-left: 4px solid var(--primary);
+}
+
+.welcome-content h1 {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    color: var(--dark);
+}
+
+.welcome-content p {
+    color: var(--muted);
+    font-size: 1.05rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.status-badge.accepting {
+    background: rgba(0, 200, 150, 0.12);
+    color: var(--primary-dark);
+}
+
+.welcome-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px 24px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.stat-total .stat-number { color: var(--primary); }
+.stat-pending .stat-number { color: var(--warning); }
+.stat-progress .stat-number { color: var(--info); }
+.stat-completed .stat-number { color: var(--primary-dark); }
+
+/* Dashboard Cards */
+.dashboard-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.card-header h2 {
+    font-size: 1.1rem;
+    margin: 0;
+    color: var(--dark);
+}
+
+.view-all {
+    color: var(--primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.view-all:hover {
+    text-decoration: underline;
+}
+
+.card-body {
+    padding: 20px 24px;
+}
+
+/* Referral List */
+.referral-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.referral-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--light);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition);
+}
+
+.referral-item:hover {
+    background: #f1f5f9;
+}
+
+.referral-info {
+    flex: 1;
+}
+
+.referral-info h4 {
+    font-size: 1rem;
+    margin: 0 0 4px 0;
+    color: var(--dark);
+}
+
+.referral-condition {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 0 0 4px 0;
+}
+
+.referral-date {
+    font-size: 0.8rem;
+    color: var(--gray-light);
+}
+
+.referral-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    margin-left: 16px;
+}
+
+/* Badges */
+.badge {
+    padding: 4px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.badge.pending {
+    background: rgba(245, 158, 11, 0.12);
+    color: #B45309;
+}
+
+.badge.in_progress {
+    background: rgba(59, 130, 246, 0.12);
+    color: #1D4ED8;
+}
+
+.badge.completed {
+    background: rgba(0, 200, 150, 0.12);
+    color: var(--primary-dark);
+}
+
+.badge.cancelled {
+    background: rgba(239, 68, 68, 0.12);
+    color: #B91C1C;
+}
+
+/* Quick Actions */
+.quick-actions {
+    margin-top: 8px;
+}
+
+.quick-actions h2 {
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+    color: var(--dark);
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.action-card {
+    background: var(--white);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+    text-decoration: none;
+    transition: transform var(--transition), box-shadow var(--transition);
+    border: 1px solid var(--border);
+}
+
+.action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    text-decoration: none;
+    border-color: var(--primary);
+}
+
+.action-icon {
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+}
+
+.action-card h3 {
+    font-size: 1rem;
+    margin: 0 0 6px 0;
+    color: var(--dark);
+}
+
+.action-card p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 0;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 32px 16px;
+}
+
+.empty-state p {
+    color: var(--muted);
+    margin-bottom: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dashboard-welcome {
+        padding: 24px;
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .welcome-content h1 {
+        font-size: 1.4rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stat-card {
+        padding: 16px 18px;
+    }
+
+    .stat-number {
+        font-size: 1.4rem;
+    }
+
+    .action-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .referral-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .referral-status {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .welcome-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .welcome-actions .btn-primary,
+    .welcome-actions .btn-ghost {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .card-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+}

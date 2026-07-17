@@ -1,0 +1,113 @@
+﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Submit a healthcare referral through Care Connect SL to connect with partner clinics and providers in Sierra Leone.">
+  <meta name="keywords" content="submit referral, healthcare referral, Sierra Leone, home visit, clinic referral">
+  <meta property="og:title" content="Make a Referral — Care Connect SL">
+  <meta property="og:description" content="Complete the referral form to connect patients with partner clinics or request a home visit.">
+  <title>Make a Referral — Care Connect SL</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div id="preloader" role="status" aria-label="Loading">
+  <div class="pulse-ring"></div>
+  <svg class="heartbeat-svg" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <polyline points="0,40 60,40 80,10 100,70 120,5 140,75 160,40 300,40" fill="none" stroke="#00C896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <p class="preload-text">Care Connect SL</p>
+</div>
+
+<header role="banner">
+  <div class="nav-inner">
+    <a href="../index.html" class="logo" aria-label="Care Connect SL Home">
+      <span class="logo-icon" aria-hidden="true">❤️</span> Care<span class="accent">Connect</span> SL
+    </a>
+    <nav aria-label="Main navigation">
+      <ul class="nav-links" role="menubar">
+        <li><a href="../index.html" role="menuitem">Home</a></li>
+        <li><a href="doctors.php" role="menuitem">Find Care</a></li>
+        <li><a href="hospitals.html" role="menuitem">Clinics</a></li>
+        <li><a href="about.html" role="menuitem">About</a></li>
+        <li><a href="contact.html" role="menuitem">Contact</a></li>
+        <li><a href="../ai-chat.php" role="menuitem" style="color: var(--primary); font-weight: 600;">💬 AI Assistant</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="../login.php" class="btn-ghost">Sign In</a>
+      <a href="../register.php" class="btn-primary">Register</a>
+    </div>
+  </div>
+</header>
+
+<main class="page-content page-content--narrow" role="main">
+  <section class="page-hero" aria-labelledby="referral-title">
+    <h1 id="referral-title">Submit a Referral</h1>
+    <p>Complete the form below to refer a patient to a partner clinic or request a home visit.</p>
+  </section>
+
+  <div class="form-card page-grid">
+    <form action="../referral.php" method="POST" class="page-grid" novalidate>
+      <label for="patientName" class="sr-only">Patient full name</label>
+      <input type="text" id="patientName" name="patient_name" placeholder="Patient full name" required maxlength="100" pattern="[A-Za-z\s\-']+" autocomplete="name" aria-required="true">
+      
+      <label for="patientAge" class="sr-only">Age</label>
+      <input type="number" id="patientAge" name="age" placeholder="Age" min="0" max="150">
+      
+      <label for="patientContact" class="sr-only">Contact phone or email</label>
+      <input type="text" id="patientContact" name="contact" placeholder="Contact phone or email" required maxlength="100" autocomplete="tel" aria-required="true">
+      
+      <label for="patientLocation" class="sr-only">Location / Address</label>
+      <input type="text" id="patientLocation" name="location" placeholder="Location / Address" required maxlength="200" autocomplete="address-line1" aria-required="true">
+      
+      <label for="preferredClinic" class="sr-only">Preferred clinic</label>
+      <input type="text" id="preferredClinic" name="preferred_clinic" placeholder="Preferred clinic (optional)" maxlength="100">
+      
+      <label for="patientCondition" class="sr-only">Brief description of condition</label>
+      <textarea id="patientCondition" name="condition" placeholder="Brief description of condition / reason for referral" rows="5" required maxlength="1000" aria-required="true"></textarea>
+      
+      <input type="hidden" name="referrer" value="self">
+      <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+      <button type="submit" class="btn-primary">Send Referral</button>
+    </form>
+    
+    <div style="margin-top: 16px; padding: 16px; background: #F8FAFC; border-radius: var(--radius-md); border: 1px solid var(--border); text-align: center;">
+      <p style="margin: 0; font-size: 0.9rem; color: var(--muted);">
+        🤖 Not sure what to include? 
+        <a href="../ai-chat.php" style="font-weight: 600; color: var(--primary);">Ask our AI Assistant</a>
+      </p>
+    </div>
+    
+    <p class="page-note">All referrals are reviewed within 24 hours.</p>
+  </div>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-grid container">
+    <div>
+      <a href="../index.html" class="logo" aria-label="Care Connect SL Home">Care<span class="accent">Connect</span> SL</a>
+      <p>Home-based care referrals and clinic coordination across Sierra Leone.</p>
+    </div>
+    <div>
+      <h3>Useful links</h3>
+      <ul class="footer-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="doctors.php">Find Care</a></li>
+        <li><a href="hospitals.html">Clinics</a></li>
+        <li><a href="../ai-chat.php">💬 AI Assistant</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Contact</h3>
+      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
+      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
+    </div>
+  </div>
+  <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved.</p>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>
