@@ -3,51 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Terms of Service for Care Connect SL.">
   <title>Terms of Service — Care Connect SL</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <style>
-    .terms-hero {
-      background: linear-gradient(135deg, rgba(30,181,58,0.9) 0%, rgba(255,255,255,0.3) 40%, rgba(0,0,205,0.9) 100%),
-                  url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
-      padding: 60px 0;
-      color: #fff;
-      text-align: center;
-    }
-    .terms-hero h1 { color: #fff; text-shadow: 0 4px 30px rgba(0,0,0,0.2); }
-    .terms-hero p { color: rgba(255,255,255,0.9); }
-    .terms-card {
-      background: rgba(255,255,255,0.7);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: var(--radius-xl);
-      padding: 40px;
-      box-shadow: var(--shadow-lg);
-      margin-bottom: 24px;
-    }
-    .terms-card h2 { margin-top: 0; }
-    .terms-card h3 { margin-top: 16px; }
-    .terms-card ul { padding-left: 20px; }
-    .commission-highlight {
-      background: linear-gradient(135deg, rgba(30,181,58,0.05), rgba(0,0,205,0.05));
-      padding: 20px;
-      border-radius: var(--radius-lg);
-      border-left: 4px solid var(--primary);
-      margin-top: 12px;
-    }
-    @media (max-width: 600px) { .terms-card { padding: 20px; } }
-  </style>
 </head>
 <body>
-<div class="page-gradient">
-
-<div id="preloader">
-  <div class="pulse-ring"></div>
-  <svg class="heartbeat-svg" viewBox="0 0 300 80"><polyline points="0,40 60,40 80,10 100,70 120,5 140,75 160,40 300,40" fill="none" stroke="#1EB53A" stroke-width="3"/></svg>
-  <p class="preload-text">Care Connect SL</p>
-  <div class="preloader-flags"><span></span><span></span><span></span></div>
-</div>
 
 <header>
   <div class="nav-inner">
@@ -55,95 +15,80 @@
     <nav>
       <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
-        <li><a href="pages/doctors.php">Find Care</a></li>
-        <li><a href="pages/hospitals.html">Clinics</a></li>
-        <li><a href="pages/referral.html">Referrals</a></li>
         <li><a href="pages/about.html">About</a></li>
         <li><a href="pages/contact.html">Contact</a></li>
-        <li><a href="ai-chat.php" style="color:var(--primary);font-weight:600;">💬 AI Assistant</a></li>
+        <li><a href="terms.html" class="active">Terms</a></li>
+        <li><a href="privacy.html">Privacy</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
       <a href="login.php" class="btn-ghost">Sign In</a>
-      <a href="register.php" class="btn-primary">✨ Register</a>
+      <a href="register.php" class="btn-primary">Get Started</a>
     </div>
   </div>
 </header>
 
-<section class="terms-hero">
-  <div class="page-content">
-    <h1 class="animate-fade-up">📋 Terms of Service</h1>
-    <p class="animate-fade-up delay-2">Last updated: January 1, 2026</p>
+<main class="page-content" style="max-width: 900px; margin: 40px auto; padding: 0 20px;">
+
+  <!-- Notice for users -->
+  <div style="background: #fefce8; border-left: 5px solid #eab308; padding: 16px 20px; border-radius: 8px; margin-bottom: 30px;">
+    <strong>Important:</strong> Please read these Terms of Service carefully. By using Care Connect SL, you agree to be bound by these terms. If you do not agree, please do not use our platform.
   </div>
-</section>
 
-<main class="page-content" style="padding:40px 0;">
+  <h1 style="margin-bottom: 8px;">Terms of Service</h1>
+  <p style="color: #64748B; margin-bottom: 30px;">Last updated: January 2026</p>
 
-  <div class="terms-card animate-fade-up">
+  <div class="terms-card" style="background:#fff; padding:30px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.06); margin-bottom:24px;">
     <h2>1. Acceptance of Terms</h2>
-    <p>By using Care Connect SL, you agree to these Terms of Service. If you do not agree, please do not use our platform.</p>
+    <p>By accessing or using Care Connect SL, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any part of these terms, you may not use our service.</p>
   </div>
 
-  <div class="terms-card animate-fade-up delay-2">
+  <div class="terms-card" style="background:#fff; padding:30px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.06); margin-bottom:24px;">
     <h2>2. Our Services</h2>
-    <p>Care Connect SL provides a platform for:</p>
-    <ul>
-      <li>Submitting and managing healthcare referrals</li>
-      <li>Connecting patients with healthcare providers</li>
-      <li>Coordinating home visits and clinic appointments</li>
-    </ul>
-    <p><strong>Medical Disclaimer:</strong> We are a referral platform and do not provide direct medical care.</p>
+    <p>Care Connect SL provides a platform that connects patients, families, and community health workers with healthcare providers for referrals and home-based care coordination in Sierra Leone.</p>
   </div>
 
-  <div class="terms-card animate-fade-up delay-3" id="commission-terms-title">
-    <h2>15. Commission and Fees</h2>
-    <p>Care Connect SL charges a commission on successful referrals to sustain the platform.</p>
-    
-    <h3>15.1 Commission Rates</h3>
-    <ul>
-      <li><strong>Doctors:</strong> 15% of the consultation fee</li>
-      <li><strong>Clinics and Hospitals:</strong> 20% of the consultation fee</li>
-    </ul>
-    
-    <h3>15.2 How Commissions Work</h3>
-    <ul>
-      <li>Commissions are deducted automatically when a patient pays for a referral</li>
-      <li>The provider receives the remaining amount (85% or 80%)</li>
-      <li>Patients are not charged any additional fees beyond the consultation fee</li>
-      <li>All transactions are recorded in your transaction history</li>
-    </ul>
-    
-    <div class="commission-highlight">
-      <p style="margin:0;font-weight:600;color:var(--primary);">💡 100% Free for Patients</p>
-      <p style="margin:0;color:var(--muted);">Patients never pay any platform fees—only the consultation fee.</p>
-    </div>
+  <div class="terms-card" style="background:#fff; padding:30px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.06); margin-bottom:24px;">
+    <h2>3. User Responsibilities</h2>
+    <p>You agree to provide accurate information when submitting referrals or registering on our platform. You are responsible for maintaining the confidentiality of your account.</p>
   </div>
 
-  <div class="terms-card animate-fade-up delay-4">
-    <h2>16. Contact Us</h2>
-    <ul>
-      <li><strong>Email:</strong> <a href="mailto:legal@careconnect.sl">legal@careconnect.sl</a></li>
-      <li><strong>Phone:</strong> <a href="tel:+23276000000">+232 76 000 000</a></li>
-    </ul>
+  <div class="terms-card" style="background:#fff; padding:30px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.06); margin-bottom:24px;">
+    <h2>4. Limitation of Liability</h2>
+    <p>Care Connect SL is a referral and coordination platform. We do not provide medical advice or direct medical services. We are not liable for any medical decisions made based on information from our platform.</p>
+  </div>
+
+  <div class="terms-card" style="background:#fff; padding:30px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.06); margin-bottom:24px;">
+    <h2>5. Contact Us</h2>
+    <p>If you have any questions about these Terms, please contact us at:</p>
+    <p><strong>Email:</strong> <a href="mailto:legal@careconnect.sl">legal@careconnect.sl</a><br>
+    <strong>Phone:</strong> <a href="tel:+23276000000">+232 76 000 000</a></p>
   </div>
 
 </main>
 
+<!-- Footer -->
 <footer class="site-footer">
   <div class="footer-grid container">
-    <div><a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a><p>Home-based care referrals across Sierra Leone.</p></div>
-    <div><h3>Legal</h3><ul class="footer-links"><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms of Service</a></li><li><a href="faq.html">FAQ</a></li></ul></div>
-    <div><h3>Contact</h3><p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p><p><a href="tel:+23276000000">+232 76 000 000</a></p></div>
+    <div>
+      <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
+      <p style="margin-top:8px; color:#94A3B8;">Home-based care referrals across Sierra Leone.</p>
+    </div>
+    <div>
+      <h3>Legal</h3>
+      <ul class="footer-links">
+        <li><a href="terms.html">Terms of Service</a></li>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Contact</h3>
+      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
+      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
+    </div>
   </div>
-  <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved. 🇸🇱 Made with ❤️ in Sierra Leone</p>
+  <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved.</p>
 </footer>
 
-<script src="js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(function() { document.getElementById('preloader').classList.add('hidden'); }, 1500);
-});
-</script>
-</div>
 </body>
 </html>
