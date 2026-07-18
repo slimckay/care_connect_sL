@@ -18,28 +18,31 @@
         <li><a href="/">Home</a></li>
         <li><a href="/pages/doctors.php" class="active">Find Care</a></li>
         <li><a href="/pages/hospitals.html">Clinics</a></li>
-        <li><a href="/pages/about.html">About</a></li>
+        <li><a href="/pages/referral.html">Referrals</a></li>
         <li><a href="/pages/contact.html">Contact</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
       <a href="/login.php" class="btn-ghost">Sign In</a>
-      <a href="/register.php" class="btn-primary">Register</a>
+      <a href="/register.php" class="btn-primary">Get Started</a>
     </div>
   </div>
 </header>
 
-<main class="page-content">
-  <section class="page-hero">
-    <h1>Find Doctors & Health Workers</h1>
-    <p>Connect with trusted doctors, nurses, and community health workers across Sierra Leone.</p>
-  </section>
+<main style="padding: 60px 20px; text-align: center; max-width: 800px; margin: 0 auto;">
+  <h1>Find Doctors & Health Workers</h1>
+  <p style="max-width: 600px; margin: 20px auto; color: #64748B;">
+    Connect with trusted doctors, nurses, and community health workers across Sierra Leone.
+  </p>
 
-  <div style="max-width: 900px; margin: 40px auto; padding: 0 24px;">
-    <p style="text-align:center; color:var(--muted);">Doctor directory coming soon. In the meantime, use our AI assistant or submit a referral.</p>
-    <div style="text-align:center; margin-top:30px;">
-      <a href="/ai-chat.php" class="btn-primary">💬 Ask AI for Help</a>
-      <a href="/pages/referral.html" class="btn-ghost" style="margin-left:12px;">Submit a Referral</a>
+  <div style="margin: 50px 0; padding: 40px; background: #f8fafc; border-radius: 16px;">
+    <h3>Doctor Directory Coming Soon</h3>
+    <p style="color: #64748B; margin-top: 12px;">
+      We're currently building a full directory of verified healthcare providers.
+    </p>
+    <div style="margin-top: 30px;">
+      <a href="/ai-chat.php" class="btn-primary" style="margin-right: 12px;">💬 Ask AI for Recommendations</a>
+      <a href="/pages/referral.html" class="btn-ghost">Submit a Referral</a>
     </div>
   </div>
 </main>
@@ -51,6 +54,5 @@
   <p class="footer-note">&copy; 2026 Care Connect SL</p>
 </footer>
 
-<script src="/js/main.js"></script>
 </body>
 </html>

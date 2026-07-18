@@ -7,49 +7,60 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
   <base href="/">
+  <style>
+    .form-container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+    .form-card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      padding: 40px 36px;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; }
+    .form-group input, .form-group textarea {
+      width: 100%; padding: 13px 16px; border: 2px solid #E5E7EB; border-radius: 10px;
+    }
+    .btn-primary { width: 100%; padding: 15px; font-size: 1.1rem; }
+  </style>
 </head>
 <body>
 
 <header>
   <div class="nav-inner">
     <a href="/" class="logo">Care<span class="accent">Connect</span> SL</a>
-    <nav>
-      <ul class="nav-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/pages/doctors.php">Find Care</a></li>
-        <li><a href="/pages/referral.html" class="active">Referrals</a></li>
-        <li><a href="/pages/about.html">About</a></li>
-        <li><a href="/pages/contact.html">Contact</a></li>
-      </ul>
-    </nav>
-    <div class="nav-actions">
-      <a href="/login.php" class="btn-ghost">Sign In</a>
-      <a href="/register.php" class="btn-primary">Register</a>
-    </div>
   </div>
 </header>
 
-<main class="page-content">
-  <section class="page-hero">
-    <h1>Submit a Referral</h1>
-    <p>Request a home visit or clinical referral for a patient in your community.</p>
-  </section>
+<div class="form-container">
+  <div class="form-card">
+    <h1 style="text-align:center; margin-bottom:8px;">Submit a Referral</h1>
+    <p style="text-align:center; color:#64748B; margin-bottom:30px;">Fill in the patient details below</p>
 
-  <div style="max-width:700px; margin:40px auto; padding:0 24px;">
-    <p style="text-align:center;">Referral form coming soon. For now, contact us or use the AI assistant.</p>
-    <div style="text-align:center; margin-top:30px;">
-      <a href="/ai-chat.php" class="btn-primary">💬 Get Help from AI</a>
-    </div>
+    <form method="POST" action="/referral-submit.php">
+      <div class="form-group">
+        <label>Patient Full Name</label>
+        <input type="text" name="patient_name" required>
+      </div>
+      <div class="form-group">
+        <label>Age</label>
+        <input type="number" name="age" required>
+      </div>
+      <div class="form-group">
+        <label>Contact Number</label>
+        <input type="tel" name="contact" required>
+      </div>
+      <div class="form-group">
+        <label>Location / Area</label>
+        <input type="text" name="location" required>
+      </div>
+      <div class="form-group">
+        <label>Medical Condition / Reason</label>
+        <textarea name="condition" rows="5" required></textarea>
+      </div>
+      <button type="submit" class="btn-primary">Submit Referral</button>
+    </form>
   </div>
-</main>
+</div>
 
-<footer class="site-footer">
-  <div class="footer-grid container">
-    <div><a href="/" class="logo">Care<span class="accent">Connect</span> SL</a></div>
-  </div>
-  <p class="footer-note">&copy; 2026 Care Connect SL</p>
-</footer>
-
-<script src="/js/main.js"></script>
 </body>
 </html>
