@@ -10,12 +10,11 @@ if (!isset($_SESSION['admin_logged_in'])) {
 
 require_once '../db.php';
 
-// Handle approval/rejection + send email
+// Handle approval/rejection + email
 if (isset($_GET['action']) && isset($_GET['id'])) {
     $id = intval($_GET['id']);
     $action = $_GET['action'];
 
-    // Get provider email first
     $stmt = $conn->prepare("SELECT u.email, u.name FROM provider_profiles p JOIN users u ON p.user_id = u.id WHERE p.user_id = ?");
     $stmt->execute([$id]);
     $provider = $stmt->fetch();
@@ -24,32 +23,17 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
         $conn->prepare("UPDATE provider_profiles SET verification_status = 'verified' WHERE user_id = ?")
              ->execute([$id]);
 
-        // Send approval email
         if ($provider) {
-            $to = $provider['email'];
-            $subject = "Your Care Connect SL Application has been Approved";
-            $message = "Hello " . $provider['name'] . ",\n\n" .
-                       "Congratulations! Your application to join Care Connect SL as a provider has been approved.\n\n" .
-                       "You can now receive referrals and will appear in our public directory.\n\n" .
-                       "Thank you for partnering with us to improve healthcare in Sierra Leone.\n\n" .
-                       "Best regards,\nCare Connect SL Team";
-            @mail($to, $subject, $message);
+            @mail($provider['email'], "Your Care Connect SL Application has been Approved", 
+                "Hello " . $provider['name'] . ",\n\nCongratulations! Your application has been approved. You can now receive referrals.\n\nBest regards,\nCare Connect SL Team");
         }
-
     } elseif ($action === 'reject') {
         $conn->prepare("UPDATE provider_profiles SET verification_status = 'rejected' WHERE user_id = ?")
              ->execute([$id]);
 
-        // Send rejection email
         if ($provider) {
-            $to = $provider['email'];
-            $subject = "Update on Your Care Connect SL Application";
-            $message = "Hello " . $provider['name'] . ",\n\n" .
-                       "We regret to inform you that your application to join Care Connect SL has been rejected at this time.\n\n" .
-                       "If you would like to reapply or need more information, please contact us.\n\n" .
-                       "Thank you for your interest in improving healthcare access in Sierra Leone.\n\n" .
-                       "Best regards,\nCare Connect SL Team";
-            @mail($to, $subject, $message);
+            @mail($provider['email'], "Update on Your Care Connect SL Application", 
+                "Hello " . $provider['name'] . ",\n\nWe regret to inform you that your application has been rejected.\n\nYou may reapply with updated documents.\n\nBest regards,\nCare Connect SL Team");
         }
     }
 
@@ -57,9 +41,9 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     exit;
 }
 
-// Get pending providers
+// Get pending providers with details
 $pending = $conn->query("
-    SELECT p.*, u.name, u.email 
+    SELECT p.*, u.name, u.email, u.phone 
     FROM provider_profiles p 
     JOIN users u ON p.user_id = u.id 
     WHERE p.verification_status = 'pending'
@@ -70,54 +54,122 @@ $pending = $conn->query("
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Verify Providers — Admin</title>
+  <title>Pending Verifications — Admin</title>
   <link rel="stylesheet" href="../style.css">
+  <style>
+    .provider-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      border: 1px solid #e5e7eb;
+    }
+    .provider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .provider-info h3 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+    .provider-info p {
+      margin: 4px 0 0;
+      color: #64748B;
+    }
+    .detail-row {
+      display: flex;
+      gap: 30px;
+      margin: 12px 0;
+      flex-wrap: wrap;
+    }
+    .detail-item {
+      min-width: 200px;
+    }
+    .detail-item label {
+      font-size: 0.8rem;
+      color: #94A3B8;
+      display: block;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
 
 <header>
   <div class="nav-inner">
-    <a href="admin-dashboard.php" class="logo">Care<span class="accent">Connect</span> SL Admin</a>
+    <a href="admin-dashboard.php" class="logo">Care<span class="accent">Connect</span> SL • Admin</a>
   </div>
 </header>
 
 <main style="max-width:1100px; margin:40px auto; padding:0 20px;">
-  <h1>Pending Provider Verifications</h1>
+  <h1 style="margin-bottom:30px;">Pending Provider Verifications</h1>
 
   <?php if (empty($pending)): ?>
-    <p>No pending verifications.</p>
+    <p style="color:#64748B;">No pending applications at the moment.</p>
   <?php else: ?>
-    <table class="data-table" style="width:100%; margin-top:20px;">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Specialty</th>
-          <th>Documents</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($pending as $p): ?>
-          <tr>
-            <td><?= htmlspecialchars($p['name']) ?></td>
-            <td><?= htmlspecialchars($p['email']) ?></td>
-            <td><?= htmlspecialchars($p['specialty'] ?? 'N/A') ?></td>
-            <td>
-              <?php if (!empty($p['verification_documents'])): ?>
-                <a href="../<?= $p['verification_documents'] ?>" target="_blank">View Documents</a>
-              <?php else: ?>
-                No documents
-              <?php endif; ?>
-            </td>
-            <td>
-              <a href="?action=verify&id=<?= $p['user_id'] ?>" class="btn-small" style="background:#16A34A;">Verify</a>
-              <a href="?action=reject&id=<?= $p['user_id'] ?>" class="btn-small" style="background:#DC2626;">Reject</a>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
+    <?php foreach ($pending as $p): ?>
+      <div class="provider-card">
+        <div class="provider-header">
+          <div class="provider-info">
+            <h3><?= htmlspecialchars($p['name']) ?></h3>
+            <p><?= htmlspecialchars($p['email']) ?> • <?= htmlspecialchars($p['phone'] ?? 'No phone') ?></p>
+          </div>
+          <div style="text-align:right;">
+            <span style="background:#fefce8; color:#854d0e; padding:4px 12px; border-radius:20px; font-size:0.85rem;">
+              Applied: <?= date('M d, Y', strtotime($p['created_at'])) ?>
+            </span>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>Specialty / Services</label>
+            <p><strong><?= htmlspecialchars($p['specialty'] ?? 'Not specified') ?></strong></p>
+          </div>
+          <div class="detail-item">
+            <label>Experience</label>
+            <p><strong><?= $p['experience_years'] ?? 0 ?> years</strong></p>
+          </div>
+        </div>
+
+        <div style="margin:16px 0;">
+          <label style="font-size:0.8rem; color:#94A3B8; display:block; margin-bottom:6px;">Verification Documents</label>
+          <?php if (!empty($p['verification_documents'])): ?>
+            <?php $docs = explode(',', $p['verification_documents']); ?>
+            <?php foreach ($docs as $doc): ?>
+              <a href="../<?= trim($doc) ?>" target="_blank" style="display:inline-block; margin-right:12px; color:#1EB53A; text-decoration:underline;">
+                📄 View Document
+              </a>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <span style="color:#DC2626;">No documents uploaded</span>
+          <?php endif; ?>
+        </div>
+
+        <div class="action-buttons">
+          <a href="?action=verify&id=<?= $p['user_id'] ?>" 
+             onclick="return confirm('Approve this provider?')"
+             class="btn-primary" style="background:#16A34A; padding:10px 24px; text-decoration:none; border-radius:8px;">
+            ✅ Verify & Approve
+          </a>
+
+          <a href="?action=reject&id=<?= $p['user_id'] ?>" 
+             onclick="return confirm('Reject this provider?')"
+             class="btn-primary" style="background:#DC2626; padding:10px 24px; text-decoration:none; border-radius:8px;">
+            ❌ Reject Application
+          </a>
+        </div>
+      </div>
+    <?php endforeach; ?>
   <?php endif; ?>
 </main>
 
