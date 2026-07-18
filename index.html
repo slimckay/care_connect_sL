@@ -34,7 +34,6 @@
       color: #fff;
       white-space: nowrap;
     }
-
     .typewriter .accent { color: #1EB53A; }
     .typewriter .blue { color: #0000CD; }
 
@@ -45,7 +44,6 @@
       margin-left: 4px;
       animation: blink 0.7s step-end infinite;
     }
-
     @keyframes blink {
       from, to { opacity: 1; }
       50% { opacity: 0; }
@@ -84,32 +82,174 @@
     @keyframes fadeUp {
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* Hero Section - Full Beautiful Version */
+    .hero {
+      background: 
+        linear-gradient(135deg, rgba(30,181,58,0.92) 0%, rgba(255,255,255,0.25) 40%, rgba(0,0,205,0.92) 100%),
+        url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+      position: relative;
+      min-height: 92vh;
+      display: flex;
+      align-items: center;
+      color: white;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 50%, rgba(30,181,58,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 80px 24px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      padding: 8px 24px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 6vw, 4.8rem);
+      line-height: 1.05;
+      margin-bottom: 20px;
+      text-shadow: 0 4px 30px rgba(0,0,0,0.3);
+    }
+
+    .hero-sub {
+      font-size: 1.25rem;
+      max-width: 680px;
+      margin: 0 auto 40px;
+      opacity: 0.95;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    }
+
+    .search-box {
+      display: flex;
+      max-width: 620px;
+      margin: 0 auto 30px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 60px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      padding: 18px 28px;
+      font-size: 1.05rem;
+      color: #1F2937;
+    }
+
+    .btn-search {
+      background: linear-gradient(135deg, #1EB53A, #0000CD);
+      color: white;
+      border: none;
+      padding: 0 36px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .trust-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .trust-badge {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2.1rem;
+      font-weight: 700;
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .hero-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .hero-title {
+        font-size: 2.6rem;
+      }
+    }
   </style>
 </head>
 <body>
 
-<!-- ===== SPLASH SCREEN WITH JAVASCRIPT TYPEWRITER ===== -->
+<!-- Splash Screen -->
 <div id="splash">
   <div class="typewriter" id="typewriter-text"></div>
   <div class="subtitle">Sierra Leone's Healthcare Referral Platform</div>
-  <div class="loading-dots">
-    <span></span><span></span><span></span>
-  </div>
+  <div class="loading-dots"><span></span><span></span><span></span></div>
 </div>
 
-<!-- ===== HEADER ===== -->
-<header role="banner">
+<!-- Header -->
+<header>
   <div class="nav-inner">
     <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
-    <nav aria-label="Main navigation">
-      <ul class="nav-links" role="menubar">
+    <nav>
+      <ul class="nav-links">
         <li><a href="index.html" class="active">Home</a></li>
         <li><a href="pages/doctors.php">Find Care</a></li>
         <li><a href="pages/hospitals.html">Clinics</a></li>
         <li><a href="pages/referral.html">Referrals</a></li>
         <li><a href="pages/about.html">About</a></li>
         <li><a href="pages/contact.html">Contact</a></li>
-        <li><a href="ai-chat.php" style="color: var(--primary); font-weight: 600;">💬 AI Assistant</a></li>
+        <li><a href="ai-chat.php" style="color:#1EB53A;font-weight:600;">💬 AI Assistant</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
@@ -119,18 +259,24 @@
   </div>
 </header>
 
-<!-- ===== HERO ===== -->
+<!-- HERO -->
 <section class="hero">
   <div class="hero-content">
     <div class="hero-badge">🇸🇱 Sierra Leone's Home-Based Care Platform</div>
-    <h1 class="hero-title">Bringing quality care to every community<br><span class="gradient-text">when it is needed most</span></h1>
-    <p class="hero-sub">Care Connect makes it easy for families, health workers, and clinics to request referrals, book urgent home visits, and coordinate local care across Sierra Leone.</p>
     
-    <div class="hero-search">
-      <div class="search-box">
-        <input type="text" id="heroSearch" placeholder="🔍 Search: referral, home visit, clinic..." />
-        <button class="btn-search" id="searchBtn">✨ Find Help Now</button>
-      </div>
+    <h1 class="hero-title">
+      Bringing quality care to every community<br>
+      <span style="color:#E0F2FE;">when it is needed most</span>
+    </h1>
+    
+    <p class="hero-sub">
+      Care Connect makes it easy for families, health workers, and clinics to request referrals, 
+      book urgent home visits, and coordinate local care across Sierra Leone.
+    </p>
+
+    <div class="search-box">
+      <input type="text" id="heroSearch" placeholder="🔍 Search: referral, home visit, clinic...">
+      <button class="btn-search" id="searchBtn">Find Help Now</button>
     </div>
 
     <div class="trust-badges">
@@ -141,22 +287,34 @@
     </div>
 
     <div class="hero-stats">
-      <div class="stat"><span class="stat-number" data-target="180">180</span>+<span class="stat-label">Community Workers</span></div>
-      <div class="stat"><span class="stat-number" data-target="65">65</span>+<span class="stat-label">Partner Clinics</span></div>
-      <div class="stat"><span class="stat-number" data-target="15">15</span>+<span class="stat-label">Districts Covered</span></div>
-      <div class="stat"><span class="stat-number" data-target="4200">4200</span>+<span class="stat-label">Referrals Managed</span></div>
+      <div class="stat">
+        <span class="stat-number" data-target="180">180</span>
+        <span class="stat-label">Community Workers</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number" data-target="65">65</span>
+        <span class="stat-label">Partner Clinics</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number" data-target="15">15</span>
+        <span class="stat-label">Districts Covered</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number" data-target="4200">4200</span>
+        <span class="stat-label">Referrals Managed</span>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ===== WAVE DIVIDER ===== -->
+<!-- Wave Divider -->
 <div style="margin:0;height:60px;overflow:hidden;">
   <svg viewBox="0 0 1440 60" preserveAspectRatio="none" style="display:block;width:100%;height:60px;">
-    <path d="M0,20 Q360,60 720,20 Q1080,-20 1440,20 L1440,60 L0,60 Z" fill="rgba(255,255,255,0.6)"/>
+    <path d="M0,20 Q360,60 720,20 Q1080,-20 1440,20 L1440,60 L0,60 Z" fill="rgba(255,255,255,0.65)"/>
   </svg>
 </div>
 
-<!-- ===== MAIN CONTENT ===== -->
+<!-- Main Content -->
 <main class="page-content" style="padding-top:20px;">
 
   <!-- How It Works -->
@@ -165,21 +323,20 @@
       <span class="subtitle">✨ Simple Process</span>
       <h2>How Care Connect Works</h2>
       <p>Patients, caregivers, and community workers can request referrals and connect with clinics in just a few steps.</p>
-      <div class="decoration"><span></span><span></span><span></span></div>
     </div>
-    
+
     <div class="feature-grid-cute">
-      <div class="feature-item-cute animate-fade-up delay-1">
+      <div class="feature-item-cute">
         <div class="icon-wrapper">📝</div>
         <h3>1. Submit Referral</h3>
         <p>Fill in patient details and describe the medical condition. It takes just 2 minutes.</p>
       </div>
-      <div class="feature-item-cute animate-fade-up delay-2">
+      <div class="feature-item-cute">
         <div class="icon-wrapper">🔄</div>
         <h3>2. Get Matched</h3>
         <p>Our team reviews and connects you with the right healthcare provider.</p>
       </div>
-      <div class="feature-item-cute animate-fade-up delay-3">
+      <div class="feature-item-cute">
         <div class="icon-wrapper">❤️</div>
         <h3>3. Receive Care</h3>
         <p>Get the care you need, with follow-up support from our community health workers.</p>
@@ -188,89 +345,45 @@
   </section>
 
   <!-- Referral Banner -->
-  <section class="site-banner animate-slide-up" style="margin-top:40px;">
+  <section class="site-banner" style="margin-top:50px;">
     <div class="banner-grid">
       <div>
         <span class="badge-cute heart">Free Service</span>
-        <h2 style="margin-top:8px;">Referral support made simple</h2>
+        <h2>Referral support made simple</h2>
         <p>Submit patient details once and reach nurses, doctors, clinics, and community health workers through one trusted platform.</p>
-        <div class="page-actions">
-          <a href="pages/referral.html" class="btn-cute btn-cute-primary">✨ Submit a Referral</a>
-          <a href="register.php" class="btn-cute btn-cute-secondary">Join Care Connect</a>
+        <div class="page-actions" style="margin-top:20px;">
+          <a href="pages/referral.html" class="btn-primary">Submit a Referral</a>
         </div>
-      </div>
-      <div class="banner-features">
-        <div class="feature-card hover-grow"><strong>🚀 Quick referral requests</strong><p>Send a patient profile, symptoms, and location so the right provider can respond fast.</p></div>
-        <div class="feature-card hover-grow"><strong>🏥 Trusted local clinics</strong><p>Connect to nearby hospitals and home-care teams that serve Sierra Leone communities.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Why Choose Us -->
-  <section style="margin-top:40px;">
-    <div class="section-header">
-      <span class="subtitle">💫 Why Choose Us</span>
-      <h2>Healthcare That Cares</h2>
-      <p>We're committed to making healthcare accessible for every community in Sierra Leone.</p>
-      <div class="decoration"><span></span><span></span><span></span></div>
-    </div>
-    
-    <div class="feature-grid-cute">
-      <div class="feature-item-cute animate-fade-up delay-1"><div class="icon-wrapper" style="background:rgba(255,107,107,0.08);">💚</div><h3>100% Free</h3><p>No fees for referrals, provider matching, or platform usage.</p></div>
-      <div class="feature-item-cute animate-fade-up delay-2"><div class="icon-wrapper" style="background:rgba(245,158,11,0.08);">⏱️</div><h3>Fast Response</h3><p>Urgent referrals processed within 4-6 hours.</p></div>
-      <div class="feature-item-cute animate-fade-up delay-3"><div class="icon-wrapper" style="background:rgba(139,92,246,0.08);">🤝</div><h3>Community Driven</h3><p>Built by Sierra Leoneans, for Sierra Leoneans.</p></div>
-    </div>
-  </section>
-
-  <!-- AI Assistant -->
-  <section class="site-banner animate-slide-up" style="background: linear-gradient(135deg, #0A1628, #1a2a4a); border: 1px solid rgba(0,200,150,0.3); margin-top:40px;">
-    <div class="banner-grid">
-      <div>
-        <span class="badge-cute sparkle">🤖 AI Powered</span>
-        <h2 style="color:var(--white);margin-top:8px;">💬 Need Health Guidance?</h2>
-        <p style="color:rgba(255,255,255,0.8);">Our AI assistant is here 24/7 to help answer your health questions, explain symptoms, and guide you to the right care.</p>
-        <div class="page-actions"><a href="ai-chat.php" class="btn-cute btn-cute-primary">💬 Chat with AI Now</a></div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:center;">
-        <div style="text-align:center;"><div style="font-size:5rem;animation:float 3s infinite ease-in-out;">🤖</div><p style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-top:8px;">Powered by OpenRouter</p></div>
       </div>
     </div>
   </section>
 
 </main>
 
-<!-- ===== FOOTER ===== -->
 <footer class="site-footer">
   <div class="footer-grid container">
-    <div><a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a><p>Home-based care referrals and clinic coordination across Sierra Leone.</p></div>
-    <div><h3>Explore</h3><ul class="footer-links"><li><a href="index.html">Home</a></li><li><a href="pages/doctors.php">Find Care</a></li><li><a href="pages/hospitals.html">Clinics</a></li><li><a href="pages/referral.html">Referrals</a></li><li><a href="ai-chat.php">💬 AI Assistant</a></li></ul></div>
-    <div><h3>Contact</h3><p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p><p><a href="tel:+23276000000">+232 76 000 000</a></p></div>
+    <div><a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a></div>
+    <div><h3>Explore</h3><ul class="footer-links"><li><a href="index.html">Home</a></li><li><a href="pages/doctors.php">Find Care</a></li></ul></div>
+    <div><h3>Contact</h3><p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p></div>
   </div>
-  <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved. Made with ❤️ in Sierra Leone</p>
+  <p class="footer-note">&copy; 2026 Care Connect SL. Made with ❤️ in Sierra Leone</p>
 </footer>
 
 <script src="/js/main.js"></script>
-
 <script>
-  // JavaScript Typewriter Effect for Splash Screen
-  function typeWriter(element, text, speed = 110) {
+  // JavaScript Typewriter
+  function typeWriter(element, text, speed = 105) {
     let i = 0;
     element.innerHTML = '';
-
     const cursor = document.createElement('span');
     cursor.className = 'cursor';
     element.appendChild(cursor);
 
     function typing() {
       if (i < text.length) {
-        const textNode = document.createTextNode(text.charAt(i));
-        element.insertBefore(textNode, cursor);
+        element.insertBefore(document.createTextNode(text.charAt(i)), cursor);
         i++;
         setTimeout(typing, speed);
-      } else {
-        setTimeout(() => {
-          cursor.style.animation = 'blink 0.7s step-end infinite';
-        }, 400);
       }
     }
     typing();
@@ -280,14 +393,11 @@
     const splash = document.getElementById('splash');
     const typewriterEl = document.getElementById('typewriter-text');
 
-    // Start typewriter
-    const fullText = 'CareConnect SL';
-    typeWriter(typewriterEl, fullText, 105);
+    typeWriter(typewriterEl, 'CareConnect SL', 100);
 
-    // Hide splash after animation
-    setTimeout(function() {
-      if (splash) splash.classList.add('hidden');
-    }, 3600);
+    setTimeout(() => {
+      splash.classList.add('hidden');
+    }, 3400);
   });
 </script>
 </body>
