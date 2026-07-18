@@ -11,7 +11,7 @@
   <style>
     .hero {
       background:
-        linear-gradient(135deg, rgba(15, 28, 58, 0.78), rgba(30, 181, 58, 0.55)),
+        linear-gradient(135deg, rgba(15, 28, 58, 0.72), rgba(30, 181, 58, 0.45)),
         url('/images/homepage-hero.jpg') center/cover no-repeat;
       min-height: 100dvh;
       display: flex;
@@ -73,34 +73,11 @@
     }
     .stat-number { font-size: 1.8rem; font-weight: 700; display: block; color: white !important; }
     .stat-label { font-size: 0.8rem; opacity: 0.9; color: white !important; }
-
-    .section {
-      max-width: 1100px;
-      margin: 60px auto;
-      padding: 0 20px;
-    }
-    .section h2 {
-      text-align: center;
-      margin-bottom: 40px;
-      color: #0F1C3A !important;
-    }
-    .testimonial {
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    }
-    .testimonial p {
-      font-style: italic;
-      color: #334155 !important;
-    }
-    .testimonial .author {
-      margin-top: 16px;
-      font-weight: 600;
-      color: #0F1C3A !important;
-      font-style: normal;
-    }
-
+    .section { max-width: 1100px; margin: 60px auto; padding: 0 20px; }
+    .section h2 { text-align: center; margin-bottom: 40px; color: #0F1C3A !important; }
+    .testimonial { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    .testimonial p { font-style: italic; color: #334155 !important; }
+    .testimonial .author { margin-top: 16px; font-weight: 600; color: #0F1C3A !important; font-style: normal; }
     [data-theme="dark"] .section h2 { color: #f8fafc !important; }
     [data-theme="dark"] .testimonial { background: #1e293b !important; }
     [data-theme="dark"] .testimonial p { color: #e2e8f0 !important; }
@@ -109,13 +86,11 @@
 </head>
 <body>
 
-<!-- Splash Screen -->
 <div id="splash" style="position:fixed; inset:0; background:linear-gradient(#0A1628, #1a2a4a); display:flex; align-items:center; justify-content:center; flex-direction:column; z-index:99999; color:white;">
   <div id="typewriter-text" style="font-family: 'Playfair Display', serif; font-size:3.2rem; font-weight:700; color:white;"></div>
   <div style="margin-top:12px; opacity:0.7; color:white;">Sierra Leone's Healthcare Referral Platform</div>
 </div>
 
-<!-- Header -->
 <header>
   <div class="nav-inner">
     <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
@@ -138,29 +113,23 @@
   </div>
 </header>
 
-<!-- Hero -->
 <section class="hero">
   <div class="hero-content">
     <div class="hero-badge" style="display:inline-block; background:rgba(255,255,255,0.15); padding:8px 20px; border-radius:50px; margin-bottom:20px; color:white;">🇸🇱 Sierra Leone's Home-Based Care Platform</div>
-    
     <h1 class="hero-title">Bringing quality care to every community<br><span style="color:#E0F2FE;">when it is needed most</span></h1>
-    
     <p style="max-width:620px; margin:0 auto 30px; font-size:1.15rem; opacity:0.95; color:white !important;">
       Care Connect makes it easy for families, health workers, and clinics to request referrals, book urgent home visits, and coordinate local care across Sierra Leone.
     </p>
-
     <div class="search-box">
       <input type="text" placeholder="🔍 Search referrals, doctors or clinics...">
       <button class="btn-search">Find Help Now</button>
     </div>
-
     <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:35px;">
       <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem; color:white;">✅ 4200+ Referrals</span>
       <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem; color:white;">🏥 65+ Clinics</span>
       <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem; color:white;">👩‍⚕️ 180+ Workers</span>
       <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem; color:white;">100% Free</span>
     </div>
-
     <div class="hero-stats">
       <div class="stat"><span class="stat-number">180</span><span class="stat-label">Community Workers</span></div>
       <div class="stat"><span class="stat-number">65</span><span class="stat-label">Partner Clinics</span></div>
@@ -170,21 +139,17 @@
   </div>
 </section>
 
-<!-- Testimonials -->
 <section class="section">
   <h2>What People Are Saying</h2>
-
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:24px;">
     <div class="testimonial">
       <p>&ldquo;Care Connect helped me get my mother to a specialist in Freetown within 24 hours. The process was simple and free.&rdquo;</p>
       <p class="author">— Mariama Sesay, Western Area</p>
     </div>
-
     <div class="testimonial">
       <p>&ldquo;As a community health worker, this platform has made referring patients so much easier. I can now track my referrals properly.&rdquo;</p>
       <p class="author">— Joseph Koroma, Bo District</p>
     </div>
-
     <div class="testimonial">
       <p>&ldquo;I was able to get verified quickly and now receive referrals regularly. This has helped grow my small clinic.&rdquo;</p>
       <p class="author">— Dr. Aminata Kamara, Kenema</p>
@@ -192,14 +157,12 @@
   </div>
 </section>
 
-<!-- Footer -->
 <footer class="site-footer">
   <div class="footer-grid container">
     <div>
       <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
       <p style="margin-top:8px; color:#94A3B8;">Home-based care referrals across Sierra Leone.</p>
     </div>
-
     <div>
       <h3>Explore</h3>
       <ul class="footer-links">
@@ -209,7 +172,6 @@
         <li><a href="ai-chat.php">AI Assistant</a></li>
       </ul>
     </div>
-
     <div>
       <h3>Legal</h3>
       <ul class="footer-links">
@@ -217,14 +179,12 @@
         <li><a href="privacy.html">Privacy Policy</a></li>
       </ul>
     </div>
-
     <div>
       <h3>Contact</h3>
       <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
       <p><a href="tel:+23276000000">+232 76 000 000</a></p>
     </div>
   </div>
-
   <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved.</p>
 </footer>
 
@@ -237,7 +197,6 @@
     cursor.style.borderRight = '3px solid #1EB53A';
     cursor.style.marginLeft = '4px';
     element.appendChild(cursor);
-
     function typing() {
       if (i < text.length) {
         element.insertBefore(document.createTextNode(text.charAt(i)), cursor);
@@ -247,18 +206,12 @@
     }
     typing();
   }
-
   window.onload = function() {
     const splash = document.getElementById('splash');
     const typewriterEl = document.getElementById('typewriter-text');
-
     if (typewriterEl) typeWriter(typewriterEl, 'CareConnect SL', 90);
-
-    setTimeout(() => {
-      if (splash) splash.style.display = 'none';
-    }, 3400);
+    setTimeout(() => { if (splash) splash.style.display = 'none'; }, 3400);
   };
 </script>
-
 </body>
 </html>
