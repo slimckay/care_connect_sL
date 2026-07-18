@@ -21,17 +21,65 @@
       border-radius: 16px;
       padding: 32px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      color: #1F2937;
+    }
+    .contact-card h3 {
+      color: #0F1C3A !important;
+      margin-bottom: 16px;
+    }
+    .contact-card p {
+      color: #1F2937 !important;
+      margin-bottom: 8px;
+    }
+    .contact-card p a {
+      color: #1EB53A !important;
+    }
+    .contact-card .muted {
+      color: #64748B !important;
+      margin-top: 20px;
     }
     .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 6px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #1F2937 !important;
+    }
     .form-group input, .form-group textarea {
-      width: 100%; padding: 13px 16px; border: 2px solid #E5E7EB; border-radius: 10px;
+      width: 100%;
+      padding: 13px 16px;
+      border: 2px solid #E5E7EB;
+      border-radius: 10px;
+      color: #1F2937;
+      background: #fff;
     }
     .btn-primary { width: 100%; padding: 14px; font-size: 1.05rem; }
 
+    /* Dark mode overrides */
     [data-theme="dark"] .contact-card {
-      background: #1e293b;
-      color: #e2e8f0;
+      background: #1e293b !important;
+      color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] .contact-card h3 {
+      color: #f8fafc !important;
+    }
+    [data-theme="dark"] .contact-card p {
+      color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] .contact-card p a {
+      color: #4ADE80 !important;
+    }
+    [data-theme="dark"] .contact-card .muted {
+      color: #94A3B8 !important;
+    }
+    [data-theme="dark"] .form-group label {
+      color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] .form-group input,
+    [data-theme="dark"] .form-group textarea {
+      background: #0f172a !important;
+      color: #e2e8f0 !important;
+      border-color: #334155 !important;
     }
   </style>
 </head>
@@ -58,8 +106,8 @@
 
 <main>
   <section class="page-hero" style="background: linear-gradient(135deg, #0F1C3A, #1a2a4a); color: white; padding: 70px 20px; text-align: center;">
-    <h1>Get in Touch</h1>
-    <p style="max-width: 600px; margin: 10px auto 0; opacity: 0.9;">We're here to support you and your community.</p>
+    <h1 style="color: white !important;">Get in Touch</h1>
+    <p style="max-width: 600px; margin: 10px auto 0; opacity: 0.9; color: white !important;">We're here to support you and your community.</p>
   </section>
 
   <div class="contact-grid">
@@ -68,7 +116,7 @@
       <p><strong>Freetown, Sierra Leone</strong></p>
       <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
       <p><a href="tel:+23276000000">+232 76 000 000</a></p>
-      <p style="margin-top: 20px; color: #64748B;">We usually respond within 24 hours.</p>
+      <p class="muted">We usually respond within 24 hours.</p>
     </div>
 
     <div class="contact-card">

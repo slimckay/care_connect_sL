@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -30,6 +30,7 @@
       font-size: clamp(2.6rem, 7vw, 4.5rem);
       line-height: 1.1;
       margin-bottom: 16px;
+      color: white !important;
     }
     .search-box {
       display: flex;
@@ -44,7 +45,7 @@
     @media (min-width: 600px) {
       .search-box { flex-direction: row; border-radius: 60px; }
     }
-    .search-box input { flex: 1; border: none; padding: 16px 24px; font-size: 1rem; }
+    .search-box input { flex: 1; border: none; padding: 16px 24px; font-size: 1rem; color: #1F2937; }
     .btn-search {
       background: linear-gradient(135deg, #1EB53A, #0000CD);
       color: white;
@@ -68,13 +69,18 @@
       padding: 16px 12px;
       text-align: center;
     }
-    .stat-number { font-size: 1.8rem; font-weight: 700; display: block; }
-    .stat-label { font-size: 0.8rem; opacity: 0.9; }
+    .stat-number { font-size: 1.8rem; font-weight: 700; display: block; color: white !important; }
+    .stat-label { font-size: 0.8rem; opacity: 0.9; color: white !important; }
 
     .section {
       max-width: 1100px;
       margin: 60px auto;
       padding: 0 20px;
+    }
+    .section h2 {
+      text-align: center;
+      margin-bottom: 40px;
+      color: #0F1C3A !important;
     }
     .testimonial {
       background: white;
@@ -82,9 +88,29 @@
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.06);
     }
+    .testimonial p {
+      font-style: italic;
+      color: #334155 !important;
+    }
+    .testimonial .author {
+      margin-top: 16px;
+      font-weight: 600;
+      color: #0F1C3A !important;
+      font-style: normal;
+    }
 
+    /* Dark mode for testimonials */
+    [data-theme="dark"] .section h2 {
+      color: #f8fafc !important;
+    }
     [data-theme="dark"] .testimonial {
-      background: #1e293b;
+      background: #1e293b !important;
+    }
+    [data-theme="dark"] .testimonial p {
+      color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] .testimonial .author {
+      color: #f8fafc !important;
     }
   </style>
 </head>
@@ -92,8 +118,8 @@
 
 <!-- Splash Screen -->
 <div id="splash" style="position:fixed; inset:0; background:linear-gradient(#0A1628, #1a2a4a); display:flex; align-items:center; justify-content:center; flex-direction:column; z-index:99999; color:white;">
-  <div id="typewriter-text" style="font-family: 'Playfair Display', serif; font-size:3.2rem; font-weight:700;"></div>
-  <div style="margin-top:12px; opacity:0.7;">Sierra Leone's Healthcare Referral Platform</div>
+  <div id="typewriter-text" style="font-family: 'Playfair Display', serif; font-size:3.2rem; font-weight:700; color:white;"></div>
+  <div style="margin-top:12px; opacity:0.7; color:white;">Sierra Leone's Healthcare Referral Platform</div>
 </div>
 
 <!-- Header -->
@@ -122,11 +148,11 @@
 <!-- Hero -->
 <section class="hero">
   <div class="hero-content">
-    <div class="hero-badge" style="display:inline-block; background:rgba(255,255,255,0.15); padding:8px 20px; border-radius:50px; margin-bottom:20px;">🇸🇱 Sierra Leone's Home-Based Care Platform</div>
+    <div class="hero-badge" style="display:inline-block; background:rgba(255,255,255,0.15); padding:8px 20px; border-radius:50px; margin-bottom:20px; color:white;">🇸🇱 Sierra Leone's Home-Based Care Platform</div>
     
     <h1 class="hero-title">Bringing quality care to every community<br><span style="color:#E0F2FE;">when it is needed most</span></h1>
     
-    <p style="max-width:620px; margin:0 auto 30px; font-size:1.15rem; opacity:0.95;">
+    <p style="max-width:620px; margin:0 auto 30px; font-size:1.15rem; opacity:0.95; color:white !important;">
       Care Connect makes it easy for families, health workers, and clinics to request referrals, book urgent home visits, and coordinate local care across Sierra Leone.
     </p>
 
@@ -136,10 +162,10 @@
     </div>
 
     <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:35px;">
-      <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem;">✅ 4200+ Referrals</span>
-      <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem;">🏥 65+ Clinics</span>
-      <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem;">👩‍⚕️ 180+ Workers</span>
-      <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem;">100% Free</span>
+      <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem; color:white;">✅ 4200+ Referrals</span>
+      <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem; color:white;">🏥 65+ Clinics</span>
+      <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem; color:white;">👩‍⚕️ 180+ Workers</span>
+      <span style="background:rgba(255,255,255,0.15); padding:8px 16px; border-radius:50px; font-size:0.9rem; color:white;">100% Free</span>
     </div>
 
     <div class="hero-stats">
@@ -153,22 +179,22 @@
 
 <!-- Testimonials -->
 <section class="section">
-  <h2 style="text-align:center; margin-bottom:40px;">What People Are Saying</h2>
+  <h2>What People Are Saying</h2>
 
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:24px;">
     <div class="testimonial">
-      <p style="font-style:italic; color:#334155;">&ldquo;Care Connect helped me get my mother to a specialist in Freetown within 24 hours. The process was simple and free.&rdquo;</p>
-      <p style="margin-top:16px; font-weight:600;">&mdash; Mariama Sesay, Western Area</p>
+      <p>&ldquo;Care Connect helped me get my mother to a specialist in Freetown within 24 hours. The process was simple and free.&rdquo;</p>
+      <p class="author">— Mariama Sesay, Western Area</p>
     </div>
 
     <div class="testimonial">
-      <p style="font-style:italic; color:#334155;">&ldquo;As a community health worker, this platform has made referring patients so much easier. I can now track my referrals properly.&rdquo;</p>
-      <p style="margin-top:16px; font-weight:600;">&mdash; Joseph Koroma, Bo District</p>
+      <p>&ldquo;As a community health worker, this platform has made referring patients so much easier. I can now track my referrals properly.&rdquo;</p>
+      <p class="author">— Joseph Koroma, Bo District</p>
     </div>
 
     <div class="testimonial">
-      <p style="font-style:italic; color:#334155;">&ldquo;I was able to get verified quickly and now receive referrals regularly. This has helped grow my small clinic.&rdquo;</p>
-      <p style="margin-top:16px; font-weight:600;">&mdash; Dr. Aminata Kamara, Kenema</p>
+      <p>&ldquo;I was able to get verified quickly and now receive referrals regularly. This has helped grow my small clinic.&rdquo;</p>
+      <p class="author">— Dr. Aminata Kamara, Kenema</p>
     </div>
   </div>
 </section>

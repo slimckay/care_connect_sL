@@ -14,17 +14,54 @@
       border-radius: 20px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.08);
       padding: 40px 36px;
+      color: #1F2937;
+    }
+    .form-card h1 {
+      text-align: center;
+      margin-bottom: 8px;
+      color: #0F1C3A !important;
+    }
+    .form-card > p {
+      text-align: center;
+      color: #64748B !important;
+      margin-bottom: 30px;
     }
     .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1F2937 !important;
+    }
     .form-group input, .form-group textarea {
-      width: 100%; padding: 13px 16px; border: 2px solid #E5E7EB; border-radius: 10px;
+      width: 100%;
+      padding: 13px 16px;
+      border: 2px solid #E5E7EB;
+      border-radius: 10px;
+      color: #1F2937;
+      background: #fff;
     }
     .btn-primary { width: 100%; padding: 15px; font-size: 1.1rem; }
 
+    /* Dark mode overrides */
     [data-theme="dark"] .form-card {
-      background: #1e293b;
-      color: #e2e8f0;
+      background: #1e293b !important;
+      color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] .form-card h1 {
+      color: #f8fafc !important;
+    }
+    [data-theme="dark"] .form-card > p {
+      color: #94A3B8 !important;
+    }
+    [data-theme="dark"] .form-group label {
+      color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] .form-group input,
+    [data-theme="dark"] .form-group textarea {
+      background: #0f172a !important;
+      color: #e2e8f0 !important;
+      border-color: #334155 !important;
     }
   </style>
 </head>
@@ -50,8 +87,8 @@
 
 <div class="form-container">
   <div class="form-card">
-    <h1 style="text-align:center; margin-bottom:8px;">Submit a Referral</h1>
-    <p style="text-align:center; color:#64748B; margin-bottom:30px;">Fill in the patient details below</p>
+    <h1>Submit a Referral</h1>
+    <p>Fill in the patient details below</p>
 
     <form method="POST" action="/referral-submit.php">
       <div class="form-group">
