@@ -8,12 +8,61 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
   <base href="/">
+  <style>
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      max-width: 1000px;
+      margin: 60px auto;
+      padding: 0 24px;
+    }
+    .contact-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 32px;
+      box-shadow: 0 10px 40px rgba(30,181,58,0.1);
+      border: 1px solid rgba(30,181,58,0.08);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .contact-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 50px rgba(30,181,58,0.15);
+    }
+    .contact-card h3 {
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+      color: #0F1C3A;
+    }
+    .contact-card p {
+      color: #64748B;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+    .contact-card a {
+      color: #1EB53A;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .contact-card a:hover {
+      text-decoration: underline;
+    }
+    .btn-block {
+      display: block;
+      width: 100%;
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
 
+<!-- Professional Header -->
 <header role="banner">
   <div class="nav-inner">
-    <a href="/" class="logo" aria-label="Care Connect SL Home">Care<span class="accent">Connect</span> SL</a>
+    <a href="/" class="logo" aria-label="Care Connect SL Home">
+      Care<span class="accent">Connect</span> SL
+    </a>
     <nav aria-label="Main navigation">
       <ul class="nav-links">
         <li><a href="/">Home</a></li>
@@ -22,7 +71,7 @@
         <li><a href="/pages/referral.html">Referrals</a></li>
         <li><a href="/pages/about.html">About</a></li>
         <li><a href="/pages/contact.html" class="active" aria-current="page">Contact</a></li>
-        <li><a href="/ai-chat.php" style="color:#1EB53A;font-weight:600;">💬 AI Assistant</a></li>
+        <li><a href="/ai-chat.php" style="color:#1EB53A; font-weight:600;">💬 AI Assistant</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
@@ -33,31 +82,69 @@
 </header>
 
 <main class="page-content">
-  <section class="page-hero">
-    <h1>Contact Us</h1>
-    <p>We'd love to hear from you. Reach out for support, partnerships, or feedback.</p>
+  <!-- Hero Section -->
+  <section class="page-hero" style="padding: 80px 24px 60px; text-align: center; background: linear-gradient(135deg, #0F1C3A 0%, #1a2a4a 100%); color: white;">
+    <h1 style="font-size: clamp(2.4rem, 5vw, 3.5rem); margin-bottom: 16px; color: white;">Get in Touch</h1>
+    <p style="max-width: 600px; margin: 0 auto; font-size: 1.2rem; opacity: 0.95;">
+      We're here to help families, health workers, and clinics across Sierra Leone.
+    </p>
   </section>
 
-  <div class="contact-grid" style="max-width: 900px; margin: 0 auto; padding: 40px 24px;">
-    <div class="card glass">
+  <!-- Contact Cards -->
+  <div class="contact-grid">
+    <!-- Office & Direct Contact -->
+    <div class="contact-card">
       <h3>📍 Our Office</h3>
-      <p>Freetown, Sierra Leone</p>
-      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
-      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
+      <p><strong>Freetown, Sierra Leone</strong></p>
+      <p style="margin: 16px 0;">
+        <a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a><br>
+        <a href="tel:+23276000000">+232 76 000 000</a>
+      </p>
+      <p style="color:#64748B; font-size:0.95rem;">We respond to emails within 24 hours.</p>
     </div>
 
-    <div class="card glass">
-      <h3>💬 Quick Support</h3>
-      <p>Chat with our AI assistant 24/7 for instant help.</p>
-      <a href="/ai-chat.php" class="btn-primary">Chat with AI Now</a>
+    <!-- Quick Help -->
+    <div class="contact-card">
+      <h3>💬 Need Help Fast?</h3>
+      <p>Chat with our AI assistant 24/7 for instant guidance on referrals, symptoms, or how to use Care Connect.</p>
+      <a href="/ai-chat.php" class="btn-primary btn-block">Chat with AI Now →</a>
     </div>
+
+    <!-- Submit Referral -->
+    <div class="contact-card">
+      <h3>📝 Submit a Referral</h3>
+      <p>Need to request a home visit or clinical referral for someone in your community?</p>
+      <a href="/pages/referral.html" class="btn-primary btn-block">Submit Referral Form →</a>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin: 60px 0 40px;">
+    <p style="color:#64748B; max-width:500px; margin:0 auto;">
+      For partnerships, media, or urgent matters, email us directly. We're happy to support community health initiatives across Sierra Leone.
+    </p>
   </div>
 </main>
 
+<!-- Footer -->
 <footer class="site-footer">
   <div class="footer-grid container">
-    <div><a href="/" class="logo">Care<span class="accent">Connect</span> SL</a></div>
-    <div><h3>Explore</h3><ul class="footer-links"><li><a href="/">Home</a></li><li><a href="/pages/doctors.php">Find Care</a></li></ul></div>
+    <div>
+      <a href="/" class="logo">Care<span class="accent">Connect</span> SL</a>
+      <p style="margin-top:8px; color:#94A3B8;">Home-based care referrals across Sierra Leone.</p>
+    </div>
+    <div>
+      <h3>Quick Links</h3>
+      <ul class="footer-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/pages/about.html">About Us</a></li>
+        <li><a href="/ai-chat.php">AI Assistant</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Contact</h3>
+      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
+      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
+    </div>
   </div>
   <p class="footer-note">&copy; 2026 Care Connect SL. Made with ❤️ in Sierra Leone</p>
 </footer>
