@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $filter = $_GET['status'] ?? 'all';
-messages = [];
+$messages = [];
 $counts = ['all' => 0, 'new' => 0, 'read' => 0, 'replied' => 0];
 
 try {
