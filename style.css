@@ -72,6 +72,35 @@
   
   /* Accessibility focus ring */
   --focus-ring: 0 0 0 3px #fff, 0 0 0 6px #1EB53A;
+
+  /* Dark Mode Variables */
+  --dark-bg: #0f172a;
+  --dark-surface: #1e293b;
+  --dark-text: #e2e8f0;
+  --dark-muted: #94a3b8;
+  --dark-border: #334155;
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+  --bg-color: var(--dark-bg);
+  --text-color: var(--dark-text);
+  --surface: var(--dark-surface);
+  --dark-text: var(--dark-text);
+  --muted: var(--dark-muted);
+  --border: var(--dark-border);
+  --white: var(--dark-surface);
+  --light: #1e293b;
+  --navy: #0f172a;
+  body { background: var(--dark-bg); color: var(--dark-text); }
+  header { background: var(--dark-surface); border-color: var(--dark-border); }
+  .card, .glass, .testimonial, .provider-card, .profile-card { background: var(--dark-surface); border-color: var(--dark-border); }
+  .nav-links a { color: var(--dark-text); }
+  .nav-links a:hover, .nav-links a.active { color: var(--primary); }
+  .btn-ghost { border-color: var(--primary); color: var(--primary); }
+  .btn-ghost:hover { background: var(--primary); color: white; }
+  input, select, textarea { background: var(--dark-surface); color: var(--dark-text); border-color: var(--dark-border); }
+  .site-footer { background: #020617; }
 }
 
 /* ============================================
@@ -852,4 +881,20 @@ a.btn-ghost,
     text-decoration: underline;
     color: #000;
   }
+}
+
+/* Dark Mode Toggle Button */
+.dark-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s;
+}
+
+.dark-toggle:hover {
+  background: var(--primary);
+  color: white;
 }
