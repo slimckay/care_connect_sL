@@ -1,5 +1,4 @@
 <?php
-// Admin - Verify Providers
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -11,18 +10,49 @@ if (!isset($_SESSION['admin_logged_in'])) {
 
 require_once '../db.php';
 
-// Handle approval/rejection
+// Handle approval/rejection + send email
 if (isset($_GET['action']) && isset($_GET['id'])) {
     $id = intval($_GET['id']);
     $action = $_GET['action'];
 
+    // Get provider email first
+    $stmt = $conn->prepare("SELECT u.email, u.name FROM provider_profiles p JOIN users u ON p.user_id = u.id WHERE p.user_id = ?");
+    $stmt->execute([$id]);
+    $provider = $stmt->fetch();
+
     if ($action === 'verify') {
         $conn->prepare("UPDATE provider_profiles SET verification_status = 'verified' WHERE user_id = ?")
              ->execute([$id]);
+
+        // Send approval email
+        if ($provider) {
+            $to = $provider['email'];
+            $subject = "Your Care Connect SL Application has been Approved";
+            $message = "Hello " . $provider['name'] . ",\n\n" .
+                       "Congratulations! Your application to join Care Connect SL as a provider has been approved.\n\n" .
+                       "You can now receive referrals and will appear in our public directory.\n\n" .
+                       "Thank you for partnering with us to improve healthcare in Sierra Leone.\n\n" .
+                       "Best regards,\nCare Connect SL Team";
+            @mail($to, $subject, $message);
+        }
+
     } elseif ($action === 'reject') {
         $conn->prepare("UPDATE provider_profiles SET verification_status = 'rejected' WHERE user_id = ?")
              ->execute([$id]);
+
+        // Send rejection email
+        if ($provider) {
+            $to = $provider['email'];
+            $subject = "Update on Your Care Connect SL Application";
+            $message = "Hello " . $provider['name'] . ",\n\n" .
+                       "We regret to inform you that your application to join Care Connect SL has been rejected at this time.\n\n" .
+                       "If you would like to reapply or need more information, please contact us.\n\n" .
+                       "Thank you for your interest in improving healthcare access in Sierra Leone.\n\n" .
+                       "Best regards,\nCare Connect SL Team";
+            @mail($to, $subject, $message);
+        }
     }
+
     header('Location: verify-providers.php');
     exit;
 }
