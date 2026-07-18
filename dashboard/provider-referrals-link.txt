@@ -1,0 +1,1 @@
+Use dashboard/provider-referrals.php from provider dashboard Referrals button
