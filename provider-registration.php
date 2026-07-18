@@ -1,5 +1,5 @@
 <?php
-// Provider Registration with File Upload Handling
+// Provider Registration with Profile Photo + Documents
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -16,23 +16,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $specialty = trim($_POST['specialty'] ?? '');
     $experience = intval($_POST['experience'] ?? 0);
 
-    // Create upload directory if not exists
     $uploadDir = __DIR__ . '/uploads/verification/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
     }
 
-    $documentPaths = [];
+    $profilePhotoPath = '';
 
-    // Handle multiple file uploads
+    // Handle Profile Photo
+    if (!empty($_FILES['profile_photo']['name']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
+        $ext = pathinfo($_FILES['profile_photo']['name'], PATHINFO_EXTENSION);
+        $photoName = 'profile_' . time() . '.' . $ext;
+        $photoDest = $uploadDir . $photoName;
+        if (move_uploaded_file($_FILES['profile_photo']['tmp_name'], $photoDest)) {
+            $profilePhotoPath = 'uploads/verification/' . $photoName;
+        }
+    }
+
+    // Handle multiple document uploads
+    $documentPaths = [];
     if (!empty($_FILES['documents']['name'][0])) {
         foreach ($_FILES['documents']['name'] as $key => $filename) {
             if ($_FILES['documents']['error'][$key] === UPLOAD_ERR_OK) {
                 $tmpName = $_FILES['documents']['tmp_name'][$key];
                 $ext = pathinfo($filename, PATHINFO_EXTENSION);
-                $newName = 'verify_' . time() . '_' . $key . '.' . $ext;
+                $newName = 'doc_' . time() . '_' . $key . '.' . $ext;
                 $destination = $uploadDir . $newName;
-
                 if (move_uploaded_file($tmpName, $destination)) {
                     $documentPaths[] = 'uploads/verification/' . $newName;
                 }
@@ -43,19 +52,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $documentsString = implode(',', $documentPaths);
 
     try {
-        // Create user account first
-        $hashed = password_hash('TempPass123!', PASSWORD_DEFAULT); // Temporary password
+        $hashed = password_hash('TempPass123!', PASSWORD_DEFAULT);
         $stmt = $conn->prepare("INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, 'active')");
         $stmt->execute([$name, $email, $hashed, $role]);
         $userId = $conn->lastInsertId();
 
-        // Create provider profile with pending verification
         $stmt = $conn->prepare("
             INSERT INTO provider_profiles 
-            (user_id, specialty, experience_years, verification_status, verification_documents, created_at)
-            VALUES (?, ?, ?, 'pending', ?, NOW())
+            (user_id, specialty, experience_years, verification_status, verification_documents, profile_photo, created_at)
+            VALUES (?, ?, ?, 'pending', ?, ?, NOW())
         ");
-        $stmt->execute([$userId, $specialty, $experience, $documentsString]);
+        $stmt->execute([$userId, $specialty, $experience, $documentsString, $profilePhotoPath]);
 
         $message = "✅ Application submitted successfully! You will be notified once verified.";
 
@@ -84,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="form-container" style="max-width:720px; margin:40px auto; padding:0 20px;">
   <div class="form-card">
     <h1>Join as a Provider</h1>
-    <p style="color:#64748B;">Your application will be reviewed. You must be verified before appearing publicly.</p>
+    <p style="color:#64748B;">Upload your profile photo and verification documents.</p>
 
     <?php if ($message): ?>
       <div style="background:#D1FAE5; padding:16px; border-radius:10px; margin:20px 0;"><?= $message ?></div>
@@ -125,7 +132,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
 
       <div class="form-group">
-        <label>Upload Verification Documents (License, Certificate, ID)</label>
+        <label>Profile Photo (Optional but recommended)</label>
+        <input type="file" name="profile_photo" accept="image/*">
+      </div>
+
+      <div class="form-group">
+        <label>Verification Documents (License, ID, Certificate)</label>
         <input type="file" name="documents[]" multiple required>
         <small>You can upload multiple files</small>
       </div>
