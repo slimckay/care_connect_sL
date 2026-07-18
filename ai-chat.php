@@ -12,61 +12,99 @@ if (session_status() === PHP_SESSION_NONE) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
+        .chat-page {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+
+        .chat-page-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .chat-page-title h1 {
+            margin: 0 0 6px 0;
+            font-size: 1.9rem;
+            color: #0F1C3A !important;
+        }
+
+        .chat-page-title p {
+            color: #64748B !important;
+            margin: 0;
+        }
+
         .chat-container {
-            max-width: 820px;
+            max-width: 1000px;
             margin: 0 auto;
             background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border-radius: 18px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 580px;
+            height: 70vh;
+            min-height: 560px;
             border: 1px solid #e5e7eb;
         }
 
         .chat-header {
             background: linear-gradient(135deg, #0F1C3A, #1a2a4a);
             color: white;
-            padding: 16px 20px;
+            padding: 18px 24px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
+            flex-shrink: 0;
         }
 
         .chat-header .ai-avatar {
-            width: 42px;
-            height: 42px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: rgba(255,255,255,0.15);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: white !important;
+        }
+
+        .chat-header p {
+            margin: 0;
+            font-size: 0.85rem;
+            opacity: 0.85;
+            color: white !important;
         }
 
         .chat-messages {
             flex: 1;
-            padding: 16px 20px;
+            padding: 24px 28px;
             overflow-y: auto;
             background: #f8fafc;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 14px;
         }
 
         .message {
-            max-width: 85%;
-            padding: 11px 15px;
-            border-radius: 14px;
-            line-height: 1.5;
-            font-size: 0.95rem;
+            max-width: 92%;
+            padding: 16px 20px;
+            border-radius: 16px;
+            line-height: 1.65;
+            font-size: 1.05rem;
+            word-wrap: break-word;
         }
 
         .message.user {
             align-self: flex-end;
             background: #1EB53A;
-            color: white;
+            color: white !important;
             border-bottom-right-radius: 4px;
         }
 
@@ -75,68 +113,121 @@ if (session_status() === PHP_SESSION_NONE) {
             background: white;
             border: 1px solid #e5e7eb;
             border-bottom-left-radius: 4px;
-        }
-
-        .chat-input-area {
-            padding: 14px 20px;
-            border-top: 1px solid #e5e7eb;
-            background: white;
-        }
-
-        .chat-input {
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 1rem;
-        }
-
-        .chat-input button {
-            padding: 0 24px;
-            background: #1EB53A;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
+            color: #1F2937 !important;
         }
 
         .chat-suggestions {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            padding: 10px 20px;
+            gap: 10px;
+            padding: 12px 24px;
             background: #f8fafc;
             border-top: 1px solid #e5e7eb;
+            flex-shrink: 0;
         }
 
         .chat-suggestions button {
-            padding: 6px 14px;
+            padding: 8px 16px;
             border: 1px solid #e5e7eb;
             border-radius: 20px;
             background: white;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: #1F2937;
+            transition: all 0.2s;
+        }
+
+        .chat-suggestions button:hover {
+            border-color: #1EB53A;
+            color: #1EB53A;
+            background: #f0fdf4;
+        }
+
+        .chat-input-area {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+            flex-shrink: 0;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            color: #1F2937;
+        }
+
+        .chat-input button {
+            padding: 0 28px;
+            background: #1EB53A;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
             cursor: pointer;
         }
 
-        /* Mobile Fixes */
+        .chat-input button:hover {
+            background: #15802A;
+        }
+
+        /* Dark mode */
+        [data-theme="dark"] .chat-page-title h1 {
+            color: #f8fafc !important;
+        }
+        [data-theme="dark"] .chat-page-title p {
+            color: #94A3B8 !important;
+        }
+        [data-theme="dark"] .chat-container {
+            background: #1e293b;
+            border-color: #334155;
+        }
+        [data-theme="dark"] .chat-messages {
+            background: #0f172a;
+        }
+        [data-theme="dark"] .message.ai {
+            background: #1e293b;
+            border-color: #334155;
+            color: #e2e8f0 !important;
+        }
+        [data-theme="dark"] .chat-suggestions,
+        [data-theme="dark"] .chat-input-area {
+            background: #1e293b;
+            border-color: #334155;
+        }
+        [data-theme="dark"] .chat-suggestions button {
+            background: #0f172a;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+        [data-theme="dark"] .chat-input input {
+            background: #0f172a;
+            border-color: #334155;
+            color: #e2e8f0;
+        }
+
+        /* Mobile */
         @media (max-width: 768px) {
             .chat-container {
-                height: 520px;
-                margin: 0 10px;
-                border-radius: 12px;
+                height: 65vh;
+                min-height: 480px;
+                border-radius: 14px;
             }
             .chat-messages {
-                padding: 12px 16px;
+                padding: 16px;
             }
             .message {
-                max-width: 92%;
-                font-size: 0.92rem;
-                padding: 10px 14px;
+                max-width: 95%;
+                font-size: 1rem;
+                padding: 14px 16px;
             }
             .chat-input {
                 flex-direction: column;
@@ -146,23 +237,16 @@ if (session_status() === PHP_SESSION_NONE) {
             }
             .chat-input button {
                 width: 100%;
-                padding: 12px;
+                padding: 14px;
             }
             .chat-suggestions {
-                padding: 8px 16px;
-                gap: 6px;
+                padding: 10px 16px;
             }
             .chat-header {
-                padding: 12px 16px;
+                padding: 14px 16px;
             }
-        }
-
-        @media (max-width: 480px) {
-            .chat-container {
-                height: 480px;
-            }
-            .message {
-                font-size: 0.9rem;
+            .chat-page-title h1 {
+                font-size: 1.5rem;
             }
         }
     </style>
@@ -172,26 +256,45 @@ if (session_status() === PHP_SESSION_NONE) {
 <header>
   <div class="nav-inner">
     <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="pages/doctors.php">Find Care</a></li>
+        <li><a href="pages/hospitals.html">Clinics</a></li>
+        <li><a href="pages/referral.html">Referrals</a></li>
+        <li><a href="pages/about.html">About</a></li>
+        <li><a href="pages/contact.html">Contact</a></li>
+        <li><a href="ai-chat.php" class="active" style="color:#1EB53A; font-weight:600;">💬 AI Assistant</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
+      <?php if (isset($_SESSION['user_id'])): ?>
+        <a href="profile.php" class="btn-ghost">Profile</a>
+        <a href="logout.php" class="btn-ghost">Logout</a>
+      <?php else: ?>
+        <a href="login.php" class="btn-ghost">Sign In</a>
+        <a href="register.php" class="btn-primary">Get Started</a>
+      <?php endif; ?>
+    </div>
   </div>
 </header>
 
-<main style="max-width: 860px; margin: 20px auto; padding: 0 12px;">
-    <div style="text-align: center; margin-bottom: 16px;">
-        <h1 style="margin: 0 0 6px 0; font-size: 1.8rem;">🤖 CareConnect AI Assistant</h1>
-        <p style="color: #64748B; margin: 0;">Ask about symptoms, malaria, fever, referrals, or health questions</p>
+<main class="chat-page">
+    <div class="chat-page-title">
+        <h1>🤖 CareConnect AI Assistant</h1>
+        <p>Ask about symptoms, malaria, fever, referrals, or health questions</p>
     </div>
 
     <div class="chat-container">
-        <!-- Header -->
         <div class="chat-header">
             <div class="ai-avatar">🇸🇱</div>
             <div>
-                <h2 style="margin:0; font-size:1.05rem;">CareConnect AI</h2>
-                <p style="margin:0; font-size:0.8rem; opacity:0.85;">Sierra Leone Health Assistant</p>
+                <h2>CareConnect AI</h2>
+                <p>Sierra Leone Health Assistant</p>
             </div>
         </div>
 
-        <!-- Messages -->
         <div class="chat-messages" id="chatMessages">
             <div class="message ai">
                 👋 Hello! I'm your AI health assistant for Sierra Leone.<br><br>
@@ -200,7 +303,6 @@ if (session_status() === PHP_SESSION_NONE) {
             </div>
         </div>
 
-        <!-- Suggestions -->
         <div class="chat-suggestions">
             <button onclick="sendSuggestion('What are the symptoms of malaria?')">🦟 Malaria</button>
             <button onclick="sendSuggestion('I have fever and headache')">🌡️ Fever</button>
@@ -209,7 +311,6 @@ if (session_status() === PHP_SESSION_NONE) {
             <button onclick="sendSuggestion('I have diarrhea')">💧 Diarrhea</button>
         </div>
 
-        <!-- Input -->
         <div class="chat-input-area">
             <div class="chat-input">
                 <input type="text" id="chatInput" placeholder="Type your health question..." autocomplete="off">
@@ -219,6 +320,7 @@ if (session_status() === PHP_SESSION_NONE) {
     </div>
 </main>
 
+<script src="js/dark-mode.js"></script>
 <script>
 const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
@@ -256,7 +358,6 @@ async function sendMessage() {
     isProcessing = true;
     showTyping();
 
-    // Simple local knowledge base for common conditions
     setTimeout(() => {
         hideTyping();
         const response = getLocalResponse(message);
@@ -304,7 +405,6 @@ function sendSuggestion(text) {
     sendMessage();
 }
 
-// Enter key support
 chatInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
         sendMessage();
