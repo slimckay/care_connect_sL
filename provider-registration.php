@@ -1,5 +1,68 @@
 <?php
-// Provider Registration with Document Upload
+// Provider Registration with File Upload Handling
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once 'db.php';
+
+$message = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $role = $_POST['role'] ?? 'doctor';
+    $specialty = trim($_POST['specialty'] ?? '');
+    $experience = intval($_POST['experience'] ?? 0);
+
+    // Create upload directory if not exists
+    $uploadDir = __DIR__ . '/uploads/verification/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
+    $documentPaths = [];
+
+    // Handle multiple file uploads
+    if (!empty($_FILES['documents']['name'][0])) {
+        foreach ($_FILES['documents']['name'] as $key => $filename) {
+            if ($_FILES['documents']['error'][$key] === UPLOAD_ERR_OK) {
+                $tmpName = $_FILES['documents']['tmp_name'][$key];
+                $ext = pathinfo($filename, PATHINFO_EXTENSION);
+                $newName = 'verify_' . time() . '_' . $key . '.' . $ext;
+                $destination = $uploadDir . $newName;
+
+                if (move_uploaded_file($tmpName, $destination)) {
+                    $documentPaths[] = 'uploads/verification/' . $newName;
+                }
+            }
+        }
+    }
+
+    $documentsString = implode(',', $documentPaths);
+
+    try {
+        // Create user account first
+        $hashed = password_hash('TempPass123!', PASSWORD_DEFAULT); // Temporary password
+        $stmt = $conn->prepare("INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, 'active')");
+        $stmt->execute([$name, $email, $hashed, $role]);
+        $userId = $conn->lastInsertId();
+
+        // Create provider profile with pending verification
+        $stmt = $conn->prepare("
+            INSERT INTO provider_profiles 
+            (user_id, specialty, experience_years, verification_status, verification_documents, created_at)
+            VALUES (?, ?, ?, 'pending', ?, NOW())
+        ");
+        $stmt->execute([$userId, $specialty, $experience, $documentsString]);
+
+        $message = "✅ Application submitted successfully! You will be notified once verified.";
+
+    } catch (PDOException $e) {
+        $message = "Error: " . $e->getMessage();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,23 +82,27 @@
 </header>
 
 <div class="form-container" style="max-width:720px; margin:40px auto; padding:0 20px;">
-  <div class="form-card" style="background:#fff; padding:40px; border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,0.08);">
-    <h1 style="text-align:center; margin-bottom:8px;">Join as a Provider</h1>
-    <p style="text-align:center; color:#64748B; margin-bottom:30px;">Register as Doctor or Clinic (Verification Required)</p>
+  <div class="form-card">
+    <h1>Join as a Provider</h1>
+    <p style="color:#64748B;">Your application will be reviewed. You must be verified before appearing publicly.</p>
 
-    <form method="POST" action="provider-registration.php" enctype="multipart/form-data">
+    <?php if ($message): ?>
+      <div style="background:#D1FAE5; padding:16px; border-radius:10px; margin:20px 0;"><?= $message ?></div>
+    <?php endif; ?>
+
+    <form method="POST" enctype="multipart/form-data">
       <div class="form-group">
         <label>Full Name / Clinic Name</label>
         <input type="text" name="name" required>
       </div>
 
       <div class="form-group">
-        <label>Email Address</label>
+        <label>Email</label>
         <input type="email" name="email" required>
       </div>
 
       <div class="form-group">
-        <label>Phone Number</label>
+        <label>Phone</label>
         <input type="tel" name="phone" required>
       </div>
 
@@ -48,8 +115,8 @@
       </div>
 
       <div class="form-group">
-        <label>Specialty / Services</label>
-        <input type="text" name="specialty" placeholder="e.g. General Medicine">
+        <label>Specialty</label>
+        <input type="text" name="specialty">
       </div>
 
       <div class="form-group">
@@ -58,17 +125,13 @@
       </div>
 
       <div class="form-group">
-        <label>Upload Verification Documents (License, ID, Certificate)</label>
+        <label>Upload Verification Documents (License, Certificate, ID)</label>
         <input type="file" name="documents[]" multiple required>
-        <small style="color:#64748B;">You can upload multiple files (PDF, JPG, PNG)</small>
+        <small>You can upload multiple files</small>
       </div>
 
       <button type="submit" class="btn-primary">Submit for Verification</button>
     </form>
-
-    <p style="text-align:center; margin-top:20px; color:#64748B; font-size:0.9rem;">
-      Your application will be reviewed within 48 hours.
-    </p>
   </div>
 </div>
 
