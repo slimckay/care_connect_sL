@@ -28,6 +28,11 @@
       width: 100%; padding: 13px 16px; border: 2px solid #E5E7EB; border-radius: 10px;
     }
     .btn-primary { width: 100%; padding: 14px; font-size: 1.05rem; }
+
+    [data-theme="dark"] .contact-card {
+      background: #1e293b;
+      color: #e2e8f0;
+    }
   </style>
 </head>
 <body>
@@ -44,6 +49,7 @@
       </ul>
     </nav>
     <div class="nav-actions">
+      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
       <a href="/login.php" class="btn-ghost">Sign In</a>
       <a href="/register.php" class="btn-primary">Get Started</a>
     </div>
@@ -97,5 +103,6 @@
   <p class="footer-note">&copy; 2026 Care Connect SL</p>
 </footer>
 
+<script src="/js/dark-mode.js"></script>
 </body>
 </html>

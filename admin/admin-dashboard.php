@@ -13,16 +13,12 @@ require_once '../db.php';
 $admin_name = $_SESSION['admin_name'] ?? 'Admin';
 
 try {
-    // Stats
     $totalUsers = $conn->query("SELECT COUNT(*) FROM users")->fetchColumn();
     $totalReferrals = $conn->query("SELECT COUNT(*) FROM referrals")->fetchColumn();
     $pendingReferrals = $conn->query("SELECT COUNT(*) FROM referrals WHERE status = 'pending'")->fetchColumn();
     $newMessages = $conn->query("SELECT COUNT(*) FROM contact_messages WHERE status = 'new'")->fetchColumn();
-
-    // Unread notifications
     $unreadNotifications = $conn->query("SELECT COUNT(*) FROM notifications WHERE is_read = FALSE")->fetchColumn();
 
-    // Recent Referrals
     $recentReferrals = $conn->query("
         SELECT r.*, u.name as patient_name 
         FROM referrals r 
@@ -30,7 +26,6 @@ try {
         ORDER BY r.created_at DESC LIMIT 5
     ")->fetchAll();
 
-    // Recent Notifications
     $recentNotifications = $conn->query("
         SELECT * FROM notifications 
         ORDER BY created_at DESC LIMIT 6
@@ -70,6 +65,7 @@ try {
         <div class="admin-topbar">
             <span class="page-title">Dashboard</span>
             <div style="display:flex; align-items:center; gap:15px;">
+                <button onclick="toggleDarkMode()" class="dark-toggle" style="font-size:1.3rem; background:none; border:none; cursor:pointer;">🌓</button>
                 <div style="position:relative;">
                     <a href="#" style="font-size:1.4rem; text-decoration:none;">🔔</a>
                     <?php if ($unreadNotifications > 0): ?>
@@ -83,8 +79,6 @@ try {
         </div>
 
         <div class="admin-content">
-
-            <!-- Stats -->
             <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:30px;">
                 <div class="stat-card"><div class="stat-number"><?= $totalUsers ?></div><div>Total Users</div></div>
                 <div class="stat-card"><div class="stat-number"><?= $totalReferrals ?></div><div>Total Referrals</div></div>
@@ -93,8 +87,6 @@ try {
             </div>
 
             <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px;">
-
-                <!-- Recent Referrals -->
                 <div class="admin-card">
                     <div class="card-header">
                         <h2>Recent Referrals</h2>
@@ -114,10 +106,9 @@ try {
                     </table>
                 </div>
 
-                <!-- Notifications -->
                 <div class="admin-card">
                     <div class="card-header">
-                        <h2>Notifications <?= $unreadNotifications > 0 ? "<span style='color:#ef4444;'>($unreadNotifications new)</span>" : '' ?></h2>
+                        <h2>Notifications</h2>
                     </div>
                     <div style="max-height:320px; overflow-y:auto;">
                         <?php if (!empty($recentNotifications)): ?>
@@ -133,10 +124,11 @@ try {
                         <?php endif; ?>
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
 </div>
+
+<script src="../js/dark-mode.js"></script>
 </body>
 </html>

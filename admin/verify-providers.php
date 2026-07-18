@@ -10,7 +10,6 @@ if (!isset($_SESSION['admin_logged_in'])) {
 
 require_once '../db.php';
 
-// Handle approval/rejection
 if (isset($_GET['action']) && isset($_GET['id'])) {
     $id = intval($_GET['id']);
     $action = $_GET['action'];
@@ -78,6 +77,9 @@ $pending = $conn->query("
 <header>
   <div class="nav-inner">
     <a href="admin-dashboard.php" class="logo">Care<span class="accent">Connect</span> SL • Admin</a>
+    <div class="nav-actions">
+      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
+    </div>
   </div>
 </header>
 
@@ -146,5 +148,6 @@ $pending = $conn->query("
   <?php endif; ?>
 </main>
 
+<script src="../js/dark-mode.js"></script>
 </body>
 </html>
