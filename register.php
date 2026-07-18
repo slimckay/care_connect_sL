@@ -53,19 +53,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 20px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.1);
             padding: 40px 36px;
+            color: #1F2937;
+        }
+        .auth-card h1 {
+            text-align: center;
+            margin-bottom: 8px;
+            color: #0F1C3A !important;
+        }
+        .auth-subtitle {
+            text-align: center;
+            color: #64748B !important;
+            margin-bottom: 28px;
         }
         .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-weight: 600; margin-bottom: 6px; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #1F2937 !important;
+        }
         .form-group input, .form-group select {
-            width: 100%; padding: 13px 16px; border: 2px solid #E5E7EB; border-radius: 10px;
+            width: 100%;
+            padding: 13px 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 10px;
+            color: #1F2937;
+            background: #fff;
         }
         .btn-primary { width: 100%; padding: 14px; font-size: 1.05rem; }
-        .error-box { background: #FEE2E2; color: #991B1B; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
+        .error-box { background: #FEE2E2; color: #991B1B !important; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; }
+        .auth-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #1F2937 !important;
+        }
+        .auth-footer a { color: #1EB53A !important; font-weight: 600; }
 
         [data-theme="dark"] .auth-card {
-            background: #1e293b;
-            color: #e2e8f0;
+            background: #1e293b !important;
+            color: #e2e8f0 !important;
         }
+        [data-theme="dark"] .auth-card h1 { color: #f8fafc !important; }
+        [data-theme="dark"] .auth-subtitle { color: #94A3B8 !important; }
+        [data-theme="dark"] .form-group label { color: #e2e8f0 !important; }
+        [data-theme="dark"] .form-group input,
+        [data-theme="dark"] .form-group select {
+            background: #0f172a !important;
+            color: #e2e8f0 !important;
+            border-color: #334155 !important;
+        }
+        [data-theme="dark"] .auth-footer { color: #e2e8f0 !important; }
     </style>
 </head>
 <body>
@@ -75,14 +112,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
     <div class="nav-actions">
       <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
+      <a href="login.php" class="btn-ghost">Sign In</a>
     </div>
   </div>
 </header>
 
 <div class="auth-container">
     <div class="auth-card">
-        <h1 style="text-align:center; margin-bottom:8px;">Create Account</h1>
-        <p style="text-align:center; color:#64748B; margin-bottom:28px;">Join Care Connect SL</p>
+        <h1>Create Account</h1>
+        <p class="auth-subtitle">Join Care Connect SL</p>
 
         <?php if (!empty($errors)): ?>
             <div class="error-box">
@@ -121,8 +159,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn-primary">Create Account</button>
         </form>
 
-        <p style="text-align:center; margin-top:20px;">
-            Already have an account? <a href="login.php" style="color:#1EB53A; font-weight:600;">Sign in</a>
+        <p class="auth-footer">
+            Already have an account? <a href="login.php">Sign in</a>
         </p>
     </div>
 </div>
