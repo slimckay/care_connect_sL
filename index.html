@@ -70,6 +70,14 @@
     }
     .stat-number { font-size: 1.8rem; font-weight: 700; display: block; }
     .stat-label { font-size: 0.8rem; opacity: 0.9; }
+
+    .testimonial {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
@@ -134,72 +142,10 @@
   </div>
 </section>
 
-<!-- Footer with Terms -->
-<footer class="site-footer">
-  <div class="footer-grid container">
-    <div>
-      <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
-      <p style="margin-top:8px; color:#94A3B8;">Home-based care referrals across Sierra Leone.</p>
-    </div>
+<!-- Testimonials -->
+<section style="max-width:1100px; margin:60px auto; padding:0 20px;">
+  <h2 style="text-align:center; margin-bottom:40px;">What People Say</h2>
 
-    <div>
-      <h3>Explore</h3>
-      <ul class="footer-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="pages/doctors.php">Find Care</a></li>
-        <li><a href="pages/referral.html">Submit Referral</a></li>
-        <li><a href="ai-chat.php">AI Assistant</a></li>
-      </ul>
-    </div>
-
-    <div>
-      <h3>Legal</h3>
-      <ul class="footer-links">
-        <li><a href="terms.html">Terms of Service</a></li>
-        <li><a href="privacy.html">Privacy Policy</a></li>
-      </ul>
-    </div>
-
-    <div>
-      <h3>Contact</h3>
-      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
-      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
-    </div>
-  </div>
-
-  <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved. Made with ❤️ in Sierra Leone</p>
-</footer>
-
-<script>
-  function typeWriter(element, text, speed = 95) {
-    let i = 0;
-    element.innerHTML = '';
-    const cursor = document.createElement('span');
-    cursor.style.borderRight = '3px solid #1EB53A';
-    cursor.style.marginLeft = '4px';
-    element.appendChild(cursor);
-
-    function typing() {
-      if (i < text.length) {
-        element.insertBefore(document.createTextNode(text.charAt(i)), cursor);
-        i++;
-        setTimeout(typing, speed);
-      }
-    }
-    typing();
-  }
-
-  window.onload = function() {
-    const splash = document.getElementById('splash');
-    const typewriterEl = document.getElementById('typewriter-text');
-
-    if (typewriterEl) typeWriter(typewriterEl, 'CareConnect SL', 90);
-
-    setTimeout(() => {
-      if (splash) splash.style.display = 'none';
-    }, 3400);
-  };
-</script>
-
-</body>
-</html>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:24px;">
+    <div class="testimonial">
+      <p style="font-style:italic; color:#334155;">
