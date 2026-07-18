@@ -10,26 +10,60 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 
 require_once '../db.php';
 
+// Ensure follow-up columns exist
+try {
+    if (!$conn->query("SHOW COLUMNS FROM referrals LIKE 'follow_up_date'")->fetch()) {
+        $conn->exec("ALTER TABLE referrals ADD COLUMN follow_up_date DATE NULL");
+    }
+    if (!$conn->query("SHOW COLUMNS FROM referrals LIKE 'follow_up_notes'")->fetch()) {
+        $conn->exec("ALTER TABLE referrals ADD COLUMN follow_up_notes TEXT NULL");
+    }
+} catch (Exception $e) {}
+
 $adminName = $_SESSION['user_name'] ?? ($_SESSION['admin_name'] ?? 'Admin');
 $message = '';
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'], $_POST['referral_id'], $_POST['status'])) {
-    $referralId = (int)$_POST['referral_id'];
-    $status = $_POST['status'];
-    $validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $referralId = (int)($_POST['referral_id'] ?? 0);
 
-    if (in_array($status, $validStatuses, true)) {
-        try {
-            $stmt = $conn->prepare("UPDATE referrals SET status = ?, updated_at = NOW() WHERE id = ?");
-            $stmt->execute([$status, $referralId]);
-            header('Location: manage-referrals.php?message=' . urlencode('Referral updated successfully'));
-            exit;
-        } catch (PDOException $e) {
-            $error = 'Failed to update referral status.';
+    if ($referralId > 0 && isset($_POST['update_status'], $_POST['status'])) {
+        $status = $_POST['status'];
+        $validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
+        if (in_array($status, $validStatuses, true)) {
+            try {
+                $conn->prepare("UPDATE referrals SET status = ?, updated_at = NOW() WHERE id = ?")
+                     ->execute([$status, $referralId]);
+                header('Location: manage-referrals.php?message=' . urlencode('Referral updated successfully'));
+                exit;
+            } catch (PDOException $e) {
+                $error = 'Failed to update referral status.';
+            }
+        } else {
+            $error = 'Invalid status selected.';
         }
-    } else {
-        $error = 'Invalid status selected.';
+    }
+
+    if ($referralId > 0 && isset($_POST['save_follow_up'])) {
+        $followUpDate = trim($_POST['follow_up_date'] ?? '');
+        $followUpNotes = trim($_POST['follow_up_notes'] ?? '');
+        if ($followUpDate !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $followUpDate)) {
+            $error = 'Invalid follow-up date.';
+        } else {
+            try {
+                $conn->prepare("
+                    UPDATE referrals
+                    SET follow_up_date = NULLIF(?, ''),
+                        follow_up_notes = NULLIF(?, ''),
+                        updated_at = NOW()
+                    WHERE id = ?
+                ")->execute([$followUpDate, $followUpNotes, $referralId]);
+                header('Location: manage-referrals.php?message=' . urlencode('Follow-up date saved'));
+                exit;
+            } catch (PDOException $e) {
+                $error = 'Could not save follow-up date.';
+            }
+        }
     }
 }
 
@@ -47,6 +81,9 @@ if (in_array($filter, ['pending', 'in_progress', 'completed', 'cancelled'], true
     $sql .= " AND r.status = ?";
     $params[] = $filter;
 }
+if ($filter === 'follow_up') {
+    $sql .= " AND r.follow_up_date IS NOT NULL AND r.follow_up_date >= CURDATE()";
+}
 
 if ($search !== '') {
     $sql .= " AND (r.patient_name LIKE ? OR r.contact LIKE ? OR r.location LIKE ? OR COALESCE(r.preferred_clinic, '') LIKE ?)";
@@ -54,10 +91,14 @@ if ($search !== '') {
     $params = array_merge($params, [$like, $like, $like, $like]);
 }
 
-$sql .= " ORDER BY r.created_at DESC";
+if ($filter === 'follow_up') {
+    $sql .= " ORDER BY r.follow_up_date ASC";
+} else {
+    $sql .= " ORDER BY r.created_at DESC";
+}
 
 $referrals = [];
-$counts = ['all' => 0, 'pending' => 0, 'in_progress' => 0, 'completed' => 0, 'cancelled' => 0];
+$counts = ['all' => 0, 'pending' => 0, 'in_progress' => 0, 'completed' => 0, 'cancelled' => 0, 'follow_up' => 0];
 
 try {
     $stmt = $conn->prepare($sql);
@@ -69,6 +110,11 @@ try {
         $statusKey = $row['status'] ?? 'pending';
         $counts[$statusKey] = (int)$row['total'];
         $counts['all'] += (int)$row['total'];
+    }
+    try {
+        $counts['follow_up'] = (int)$conn->query("SELECT COUNT(*) FROM referrals WHERE follow_up_date IS NOT NULL AND follow_up_date >= CURDATE()")->fetchColumn();
+    } catch (Exception $e) {
+        $counts['follow_up'] = 0;
     }
 } catch (PDOException $e) {
     $error = 'Could not load referrals.';
@@ -87,15 +133,20 @@ $active = 'referrals';
   <link rel="stylesheet" href="admin-styles.css">
   <style>
     .status-form { display:flex; flex-direction:column; gap:8px; min-width:140px; }
-    .status-form select {
-      padding:8px 10px; border:1px solid #E5E7EB; border-radius:8px; background:#fff; color:#1F2937;
+    .status-form select, .fu-form input {
+      padding:8px 10px; border:1px solid #E5E7EB; border-radius:8px; background:#fff; color:#1F2937; font:inherit;
     }
-    .status-form button {
+    .status-form button, .fu-form button {
       border:none; background:#0F1C3A; color:#fff; border-radius:8px; padding:8px 10px; font-weight:600; cursor:pointer;
     }
+    .fu-form { display:flex; flex-direction:column; gap:6px; min-width:150px; }
     .patient-name { font-weight:700; color:#0F1C3A !important; margin-bottom:4px; }
-    .condition-text { max-width:260px; color:#334155 !important; line-height:1.45; }
-    [data-theme="dark"] .status-form select { background:#1e293b; border-color:#334155; color:#E2E8F0; }
+    .condition-text { max-width:220px; color:#334155 !important; line-height:1.45; }
+    .fu-date { font-weight:700; color:#3730A3 !important; font-size:0.88rem; }
+    .fu-date.today { color:#B91C1C !important; }
+    .fu-date.soon { color:#B45309 !important; }
+    [data-theme="dark"] .status-form select,
+    [data-theme="dark"] .fu-form input { background:#1e293b; border-color:#334155; color:#E2E8F0; }
     [data-theme="dark"] .patient-name { color:#F8FAFC !important; }
     [data-theme="dark"] .condition-text { color:#E2E8F0 !important; }
   </style>
@@ -125,7 +176,7 @@ $active = 'referrals';
         <a href="?status=pending" class="<?= $filter === 'pending' ? 'active' : '' ?>">Pending (<?= $counts['pending'] ?>)</a>
         <a href="?status=in_progress" class="<?= $filter === 'in_progress' ? 'active' : '' ?>">In Progress (<?= $counts['in_progress'] ?>)</a>
         <a href="?status=completed" class="<?= $filter === 'completed' ? 'active' : '' ?>">Completed (<?= $counts['completed'] ?>)</a>
-        <a href="?status=cancelled" class="<?= $filter === 'cancelled' ? 'active' : '' ?>">Cancelled (<?= $counts['cancelled'] ?>)</a>
+        <a href="?status=follow_up" class="<?= $filter === 'follow_up' ? 'active' : '' ?>">📅 Follow-ups (<?= $counts['follow_up'] ?>)</a>
 
         <form method="GET" class="search-form">
           <input type="hidden" name="status" value="<?= htmlspecialchars($filter) ?>">
@@ -150,10 +201,9 @@ $active = 'referrals';
                   <th>ID</th>
                   <th>Patient</th>
                   <th>Condition</th>
-                  <th>Location</th>
                   <th>Status</th>
-                  <th>Date</th>
-                  <th>Update</th>
+                  <th>Follow-up</th>
+                  <th>Update status</th>
                 </tr>
               </thead>
               <tbody>
@@ -162,6 +212,13 @@ $active = 'referrals';
                     $patient = $ref['patient_name'] ?? 'Unknown';
                     $condition = $ref['condition'] ?? ($ref['medical_condition'] ?? 'Not provided');
                     $status = $ref['status'] ?? 'pending';
+                    $fu = $ref['follow_up_date'] ?? '';
+                    $fuClass = '';
+                    if ($fu) {
+                      $days = (int)round((strtotime($fu) - strtotime(date('Y-m-d'))) / 86400);
+                      if ($days === 0) $fuClass = 'today';
+                      elseif ($days > 0 && $days <= 3) $fuClass = 'soon';
+                    }
                   ?>
                   <tr>
                     <td>#<?= (int)$ref['id'] ?></td>
@@ -171,18 +228,27 @@ $active = 'referrals';
                         <?= htmlspecialchars($ref['contact'] ?? 'No contact') ?>
                         <?php if (!empty($ref['age'])): ?> · Age <?= (int)$ref['age'] ?><?php endif; ?>
                       </div>
+                      <div class="muted"><?= htmlspecialchars($ref['location'] ?? '-') ?></div>
                     </td>
                     <td>
                       <div class="condition-text"><?= htmlspecialchars($condition) ?></div>
-                      <?php if (!empty($ref['preferred_clinic'])): ?>
-                        <div class="muted" style="margin-top:6px;">Clinic: <?= htmlspecialchars($ref['preferred_clinic']) ?></div>
-                      <?php endif; ?>
                     </td>
-                    <td><?= htmlspecialchars($ref['location'] ?? '-') ?></td>
                     <td><span class="badge <?= htmlspecialchars($status) ?>"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $status))) ?></span></td>
                     <td>
-                      <?= !empty($ref['created_at']) ? date('M d, Y', strtotime($ref['created_at'])) : '-' ?>
-                      <div class="muted"><?= !empty($ref['created_at']) ? date('H:i', strtotime($ref['created_at'])) : '' ?></div>
+                      <?php if ($fu): ?>
+                        <div class="fu-date <?= $fuClass ?>"><?= date('M d, Y', strtotime($fu)) ?></div>
+                        <?php if (!empty($ref['follow_up_notes'])): ?>
+                          <div class="muted"><?= htmlspecialchars($ref['follow_up_notes']) ?></div>
+                        <?php endif; ?>
+                      <?php else: ?>
+                        <div class="muted">Not set</div>
+                      <?php endif; ?>
+                      <form method="POST" class="fu-form" style="margin-top:8px;">
+                        <input type="hidden" name="referral_id" value="<?= (int)$ref['id'] ?>">
+                        <input type="date" name="follow_up_date" value="<?= htmlspecialchars($fu) ?>">
+                        <input type="text" name="follow_up_notes" value="<?= htmlspecialchars($ref['follow_up_notes'] ?? '') ?>" placeholder="Follow-up note">
+                        <button type="submit" name="save_follow_up" value="1">Save</button>
+                      </form>
                     </td>
                     <td>
                       <form method="POST" class="status-form">
