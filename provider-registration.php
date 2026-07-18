@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
         $stmt->execute([$userId, $specialty, $experience, $documentsString, $profilePhotoPath]);
 
-        $message = "✅ Application submitted successfully! You will be notified once verified.";
+        $message = "✅ Thank you! Your application has been submitted successfully. Our team will review your documents and contact you within 48 hours.";
 
     } catch (PDOException $e) {
         $message = "Error: " . $e->getMessage();
