@@ -60,16 +60,14 @@
       overflow: hidden;
       box-shadow: 0 20px 50px rgba(0,0,0,0.35);
       border: 1px solid rgba(255,255,255,0.12);
-      min-height: 340px;
       background: #0f172a;
     }
     .hero-visual img {
       width: 100%;
-      height: 100%;
-      min-height: 340px;
+      height: auto;
+      min-height: 320px;
       object-fit: cover;
       display: block;
-      image-rendering: auto;
     }
     .search-box {
       display: flex;
@@ -119,27 +117,20 @@
     [data-theme="dark"] .testimonial { background: #1e293b !important; }
     [data-theme="dark"] .testimonial p { color: #e2e8f0 !important; }
     [data-theme="dark"] .testimonial .author { color: #f8fafc !important; }
-
     @media (max-width: 900px) {
-      .hero-inner {
-        grid-template-columns: 1fr;
-        padding-top: 36px;
-        padding-bottom: 40px;
-      }
+      .hero-inner { grid-template-columns: 1fr; padding-top: 36px; padding-bottom: 40px; }
       .hero-content { text-align: center; }
       .hero-text, .search-box, .hero-stats { margin-left: auto; margin-right: auto; }
-      .hero-visual { order: -1; min-height: 240px; }
-      .hero-visual img { min-height: 240px; }
+      .hero-visual { order: -1; }
+      .hero-visual img { min-height: 220px; }
     }
   </style>
 </head>
 <body>
-
 <div id="splash" style="position:fixed; inset:0; background:linear-gradient(#0A1628, #1a2a4a); display:flex; align-items:center; justify-content:center; flex-direction:column; z-index:99999; color:white;">
   <div id="typewriter-text" style="font-family: 'Playfair Display', serif; font-size:3.2rem; font-weight:700; color:white;"></div>
   <div style="margin-top:12px; opacity:0.7; color:white;">Sierra Leone's Healthcare Referral Platform</div>
 </div>
-
 <header>
   <div class="nav-inner">
     <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
@@ -161,7 +152,6 @@
     </div>
   </div>
 </header>
-
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-content">
@@ -181,13 +171,11 @@
         <div class="stat"><span class="stat-number">4200</span><span class="stat-label">Referrals Managed</span></div>
       </div>
     </div>
-
     <div class="hero-visual">
-      <img src="/images/hero-serve.php" alt="Healthcare worker providing care in Sierra Leone" width="900" height="600" loading="eager">
+      <img src="/images/homepage-hero.jpg" alt="Doctor and patient reviewing care plan on tablet" width="900" height="600" loading="eager">
     </div>
   </div>
 </section>
-
 <section class="section">
   <h2>What People Are Saying</h2>
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:24px;">
@@ -205,7 +193,6 @@
     </div>
   </div>
 </section>
-
 <footer class="site-footer">
   <div class="footer-grid container">
     <div>
@@ -236,7 +223,6 @@
   </div>
   <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved.</p>
 </footer>
-
 <script src="/js/dark-mode.js"></script>
 <script>
   function typeWriter(element, text, speed = 95) {
