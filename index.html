@@ -9,6 +9,79 @@
   <link rel="stylesheet" href="/style.css">
   <base href="/">
   <style>
+    /* ===== CUTE SPLASH SCREEN ===== */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: linear-gradient(160deg, #0A1628 0%, #12253f 40%, #0f3d2a 100%);
+      color: white;
+      transition: opacity 0.7s ease, visibility 0.7s ease;
+    }
+    #splash.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-heart {
+      font-size: 3.2rem;
+      line-height: 1;
+      margin-bottom: 18px;
+      animation: softBounce 1.4s ease-in-out infinite;
+      filter: drop-shadow(0 8px 18px rgba(30, 181, 58, 0.35));
+    }
+    @keyframes softBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-10px) scale(1.08); }
+    }
+    .splash-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 7vw, 3.4rem);
+      font-weight: 700;
+      color: white;
+      letter-spacing: 0.5px;
+      min-height: 1.2em;
+    }
+    .splash-logo .accent {
+      color: #4ADE80;
+    }
+    .splash-tagline {
+      margin-top: 10px;
+      font-size: 0.98rem;
+      color: rgba(255,255,255,0.78);
+      letter-spacing: 0.2px;
+    }
+    .splash-dots {
+      display: flex;
+      gap: 8px;
+      margin-top: 28px;
+    }
+    .splash-dots span {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #4ADE80;
+      opacity: 0.35;
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+    .splash-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .splash-dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes dotPulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+    .splash-note {
+      position: absolute;
+      bottom: 28px;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.45);
+    }
+
+    /* ===== HERO ===== */
     .hero {
       min-height: 100dvh;
       display: flex;
@@ -58,7 +131,6 @@
       font-size: 0.92rem;
     }
 
-    /* Glass search bar */
     .search-box {
       display: flex;
       flex-direction: column;
@@ -79,7 +151,6 @@
         align-items: center;
       }
     }
-
     .search-box input,
     .search-box input:focus,
     .search-box input:active,
@@ -101,8 +172,6 @@
       color: rgba(255,255,255,0.75) !important;
       opacity: 1;
     }
-
-    /* Kill grey/yellow autofill & focus fill */
     .search-box input:-webkit-autofill,
     .search-box input:-webkit-autofill:hover,
     .search-box input:-webkit-autofill:focus,
@@ -113,9 +182,7 @@
       box-shadow: 0 0 0 1000px transparent inset !important;
       -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
       background: transparent !important;
-      background-color: transparent !important;
     }
-
     .btn-search {
       background: linear-gradient(135deg, #1EB53A, #0000CD);
       color: white;
@@ -128,9 +195,7 @@
       white-space: nowrap;
       box-shadow: 0 4px 14px rgba(0,0,0,0.2);
     }
-    .btn-search:hover {
-      filter: brightness(1.08);
-    }
+    .btn-search:hover { filter: brightness(1.08); }
 
     .hero-pills {
       display: flex;
@@ -149,7 +214,6 @@
       font-size: 0.9rem;
       color: white;
     }
-
     .hero-stats {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -185,9 +249,15 @@
 </head>
 <body>
 
-<div id="splash" style="position:fixed; inset:0; background:linear-gradient(#0A1628, #1a2a4a); display:flex; align-items:center; justify-content:center; flex-direction:column; z-index:99999; color:white;">
-  <div id="typewriter-text" style="font-family: 'Playfair Display', serif; font-size:3.2rem; font-weight:700; color:white;"></div>
-  <div style="margin-top:12px; opacity:0.7; color:white;">Sierra Leone's Healthcare Referral Platform</div>
+<!-- Cute Splash Screen -->
+<div id="splash">
+  <div class="splash-heart" aria-hidden="true">💚</div>
+  <div class="splash-logo" id="typewriter-text"></div>
+  <div class="splash-tagline">Care that finds you, wherever you are</div>
+  <div class="splash-dots" aria-hidden="true">
+    <span></span><span></span><span></span>
+  </div>
+  <div class="splash-note">Sierra Leone 🇸🇱</div>
 </div>
 
 <header>
@@ -301,18 +371,25 @@
 
 <script src="/js/dark-mode.js"></script>
 <script>
-  function typeWriter(element, text, speed = 95) {
+  function typeWriter(element, text, speed = 80) {
     let i = 0;
     element.innerHTML = '';
     const cursor = document.createElement('span');
-    cursor.style.borderRight = '3px solid #1EB53A';
-    cursor.style.marginLeft = '4px';
+    cursor.textContent = '|';
+    cursor.style.color = '#4ADE80';
+    cursor.style.marginLeft = '2px';
+    cursor.style.animation = 'dotPulse 1s step-end infinite';
     element.appendChild(cursor);
+
     function typing() {
       if (i < text.length) {
+        // Keep "Connect" green when fully typed later
         element.insertBefore(document.createTextNode(text.charAt(i)), cursor);
         i++;
         setTimeout(typing, speed);
+      } else {
+        // Restyle finished logo with accent on Connect
+        element.innerHTML = 'Care<span class="accent">Connect</span> SL';
       }
     }
     typing();
@@ -320,46 +397,33 @@
 
   function runHeroSearch(query) {
     const q = (query || '').trim().toLowerCase();
-
-    // Smart routing based on what the user typed
-    if (!q) {
-      window.location.href = 'pages/doctors.php';
-      return;
-    }
-
+    if (!q) { window.location.href = 'pages/doctors.php'; return; }
     if (q.includes('referral') || q.includes('refer') || q.includes('submit')) {
-      window.location.href = 'pages/referral.html';
-      return;
+      window.location.href = 'pages/referral.html'; return;
     }
-
     if (q.includes('clinic') || q.includes('hospital') || q.includes('health centre') || q.includes('health center')) {
-      window.location.href = 'pages/hospitals.html';
-      return;
+      window.location.href = 'pages/hospitals.html'; return;
     }
-
     if (q.includes('ai') || q.includes('assistant') || q.includes('chat') || q.includes('help me')) {
-      window.location.href = 'ai-chat.php';
-      return;
+      window.location.href = 'ai-chat.php'; return;
     }
-
     if (q.includes('contact') || q.includes('call') || q.includes('phone')) {
-      window.location.href = 'pages/contact.html';
-      return;
+      window.location.href = 'pages/contact.html'; return;
     }
-
-    // Default: Find Care with search query
     window.location.href = 'pages/doctors.php?q=' + encodeURIComponent(query.trim());
   }
 
   window.onload = function() {
     const splash = document.getElementById('splash');
     const typewriterEl = document.getElementById('typewriter-text');
-    if (typewriterEl) typeWriter(typewriterEl, 'CareConnect SL', 90);
-    setTimeout(() => { if (splash) splash.style.display = 'none'; }, 3400);
+    if (typewriterEl) typeWriter(typewriterEl, 'CareConnect SL', 75);
+
+    setTimeout(() => {
+      if (splash) splash.classList.add('hide');
+    }, 2800);
 
     const form = document.getElementById('heroSearchForm');
     const input = document.getElementById('heroSearchInput');
-
     if (form && input) {
       form.addEventListener('submit', function(e) {
         e.preventDefault();
