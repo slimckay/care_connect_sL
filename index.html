@@ -9,6 +9,29 @@
   <link rel="stylesheet" href="/style.css">
   <base href="/">
   <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #1e293b;
+      --nav-bg: #ffffff;
+      --card-bg: #ffffff;
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #0f172a;
+      --text-color: #e2e8f0;
+      --nav-bg: #1e293b;
+      --card-bg: #1e293b;
+    }
+
+    body {
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    header {
+      background: var(--nav-bg);
+    }
+
     .hero {
       background: linear-gradient(135deg, rgba(30,181,58,0.92), rgba(0,0,205,0.92)), url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
       min-height: 100dvh;
@@ -17,70 +40,22 @@
       color: white;
       position: relative;
     }
-    .hero-content {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 40px 20px;
-      text-align: center;
-      position: relative;
-      z-index: 2;
-    }
-    .hero-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2.6rem, 7vw, 4.5rem);
-      line-height: 1.1;
-      margin-bottom: 16px;
-    }
-    .search-box {
-      display: flex;
-      flex-direction: column;
-      max-width: 620px;
-      margin: 0 auto 30px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    }
-    @media (min-width: 600px) {
-      .search-box { flex-direction: row; border-radius: 60px; }
-    }
-    .search-box input { flex: 1; border: none; padding: 16px 24px; font-size: 1rem; }
-    .btn-search {
-      background: linear-gradient(135deg, #1EB53A, #0000CD);
-      color: white;
-      padding: 16px 32px;
-      font-weight: 700;
-      border: none;
-    }
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      max-width: 100%;
-      margin: 0 auto;
-    }
-    @media (min-width: 700px) {
-      .hero-stats { grid-template-columns: repeat(4, 1fr); }
-    }
-    .stat {
-      background: rgba(255,255,255,0.12);
-      border-radius: 14px;
-      padding: 16px 12px;
-      text-align: center;
-    }
-    .stat-number { font-size: 1.8rem; font-weight: 700; display: block; }
-    .stat-label { font-size: 0.8rem; opacity: 0.9; }
 
-    .section {
-      max-width: 1100px;
-      margin: 60px auto;
-      padding: 0 20px;
+    .search-box {
+      background: rgba(255,255,255,0.95);
     }
+
     .testimonial {
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      background: var(--card-bg);
+    }
+
+    .dark-toggle {
+      background: none;
+      border: 1px solid #e5e7eb;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 1.1rem;
     }
   </style>
 </head>
@@ -92,7 +67,7 @@
   <div style="margin-top:12px; opacity:0.7;">Sierra Leone's Healthcare Referral Platform</div>
 </div>
 
-<!-- Header -->
+<!-- Header with Navigation -->
 <header>
   <div class="nav-inner">
     <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
@@ -108,6 +83,7 @@
       </ul>
     </nav>
     <div class="nav-actions">
+      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
       <a href="login.php" class="btn-ghost">Sign In</a>
       <a href="register.php" class="btn-primary">✨ Get Started</a>
     </div>
@@ -223,6 +199,18 @@
     typing();
   }
 
+  function toggleDarkMode() {
+    const html = document.documentElement;
+    if (html.getAttribute('data-theme') === 'dark') {
+      html.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    }
+  }
+
+  // Load saved theme
   window.onload = function() {
     const splash = document.getElementById('splash');
     const typewriterEl = document.getElementById('typewriter-text');
@@ -232,6 +220,12 @@
     setTimeout(() => {
       if (splash) splash.style.display = 'none';
     }, 3400);
+
+    // Dark mode
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
   };
 </script>
 
