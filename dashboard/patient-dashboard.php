@@ -58,7 +58,7 @@ try {
 
     try {
         $stmt = $conn->prepare("
-            SELECT id, patient_name, condition, status, created_at
+            SELECT id, patient_name, `condition`, status, created_at
             FROM referrals
             WHERE user_id = ?
             ORDER BY created_at DESC
@@ -79,7 +79,6 @@ try {
     }
 } catch (PDOException $e) {
     error_log("Patient dashboard error: " . $e->getMessage());
-    $error = "Unable to load dashboard data.";
 }
 ?>
 <!DOCTYPE html>
@@ -118,7 +117,7 @@ try {
         </nav>
         <div class="nav-actions">
             <span style="color: var(--muted); font-size: 0.9rem;">👋 <?php echo htmlspecialchars($user_name); ?></span>
-            <a href="../logout.php" class="btn-ghost">Logout</a>
+            <a href="../logout.php" class="btn-ghost btn-logout">Log out</a>
         </div>
     </div>
 </header>
@@ -175,9 +174,7 @@ try {
                 <?php if (!empty($recentReferrals)): ?>
                     <div class="referral-list">
                         <?php foreach ($recentReferrals as $referral): ?>
-                            <?php
-                              $cond = $referral['condition'] ?? ($referral['medical_condition'] ?? 'Not provided');
-                            ?>
+                            <?php $cond = $referral['condition'] ?? ($referral['medical_condition'] ?? 'Not provided'); ?>
                             <div class="referral-item">
                                 <div class="referral-info">
                                     <h4><?php echo htmlspecialchars($referral['patient_name']); ?></h4>
@@ -253,5 +250,6 @@ try {
 </footer>
 
 <script src="../js/main.js"></script>
+<script src="../js/mobile-logout.js"></script>
 </body>
 </html>
