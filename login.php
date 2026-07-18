@@ -1,7 +1,7 @@
 <?php
 /**
  * Login - Care Connect SL
- * All-in-one login form with processing
+ * Professional & Clean Version
  */
 
 // Start session
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Sign in to your Care Connect SL account.">
   <title>Login - Care Connect SL</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Playfair+Display:wght@600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
     .login-container {
@@ -207,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <header role="banner">
   <div class="nav-inner">
     <a href="index.html" class="logo" aria-label="Care Connect SL Home">
-      <span class="logo-icon" aria-hidden="true">❤️</span> Care<span class="accent">Connect</span> SL
+      Care<span class="accent">Connect</span> SL
     </a>
     <nav aria-label="Main navigation">
       <ul class="nav-links" role="menubar">
@@ -239,122 +239,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'invalid_credentials':
                 $message = 'Invalid email or password. Please try again.';
                 break;
+            case 'rate_limit':
+                $message = 'Too many login attempts. Please try again later.';
+                break;
+            case 'csrf':
+                $message = 'Security validation failed. Please refresh the page.';
+                break;
+            case 'missing':
+                $message = 'Please enter both email and password.';
+                break;
+            case 'invalid_email':
+                $message = 'Please enter a valid email address.';
+                break;
             case 'account_inactive':
                 $message = 'Your account is inactive. Please contact support.';
                 break;
             case 'account_banned':
                 $message = 'Your account has been banned. Please contact support.';
                 break;
-            case 'rate_limit':
-                $message = 'Too many login attempts. Please wait 5 minutes.';
-                break;
-            case 'csrf':
-                $message = 'Security validation failed. Please refresh and try again.';
-                break;
             case 'server_error':
                 $message = 'A server error occurred. Please try again later.';
-                break;
-            case 'missing':
-                $message = 'Please fill in all fields.';
-                break;
-            case 'invalid_email':
-                $message = 'Please enter a valid email address.';
                 break;
             default:
                 $message = 'An error occurred. Please try again.';
         }
-        echo '<div class="form-message error">❌ ' . $message . '</div>';
+        echo '<div class="error-box">' . htmlspecialchars($message) . '</div>';
     }
 
-    // Display success message after registration
-    if (isset($_GET['registered']) && $_GET['registered'] == 1) {
-        echo '<div class="form-message success">✅ Registration successful! Please login below.</div>';
-    }
-
-    // Display logout success message
-    if (isset($_GET['logout']) && $_GET['logout'] == 'success') {
-        echo '<div class="form-message success">✅ You have been logged out successfully.</div>';
+    if (isset($_GET['registered'])) {
+        echo '<div class="success-box">Registration successful! Please log in.</div>';
     }
     ?>
 
-    <div class="form-card">
-      <form action="login.php" method="POST" novalidate>
-        <!-- CSRF Token -->
-        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-        
-        <div style="margin-bottom: 16px;">
-          <label for="loginEmail">Email Address</label>
-          <input type="email" 
-                 id="loginEmail" 
-                 name="email" 
-                 placeholder="Enter your email" 
-                 required 
-                 maxlength="100" 
-                 autocomplete="email" 
-                 aria-required="true">
-        </div>
-        
-        <div style="margin-bottom: 16px;">
-          <label for="loginPassword">Password</label>
-          <div style="position: relative;">
-            <input type="password" 
-                   id="loginPassword" 
-                   name="password" 
-                   placeholder="Enter your password" 
-                   required 
-                   minlength="8" 
-                   autocomplete="current-password" 
-                   aria-required="true">
-            <button type="button" 
-                    class="password-toggle" 
-                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 4px;"
-                    aria-label="Show password">👁️</button>
-          </div>
-        </div>
-        
-        <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
-      </form>
-      
-      <div class="login-options">
-        <p style="margin: 0; font-size: 0.9rem; color: var(--muted);">
-          Don't have an account? <a href="register.php" style="font-weight: 600;">Register</a>
-        </p>
-        <a href="forgot-password.php">Forgot your password?</a>
-      </div>
-    </div>
+    <form method="POST" action="login.php" class="form-card">
+      <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
 
-    <!-- Quick AI Help - FIXED LINK -->
-    <div style="margin-top: 24px; padding: 20px; text-align: center; background: linear-gradient(135deg, #F0FDF9, #F7FFFB); border-radius: var(--radius-lg); border: 1px solid var(--border);">
-      <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">
-        🤖 Need help? <a href="ai-chat.php" style="font-weight: 600;">Chat with our AI Assistant</a>
-      </p>
-    </div>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" class="btn-primary">Sign In</button>
+
+      <div class="login-options">
+        <a href="forgot-password.php">Forgot password?</a>
+        <a href="register.php">Create new account</a>
+      </div>
+    </form>
   </div>
 </main>
 
-<footer class="site-footer" role="contentinfo">
-  <div class="footer-grid container">
-    <div>
-      <a href="index.html" class="logo" aria-label="Care Connect SL Home">Care<span class="accent">Connect</span> SL</a>
-      <p>Home-based care referrals and clinic coordination across Sierra Leone.</p>
-    </div>
-    <div>
-      <h3>Quick links</h3>
-      <ul class="footer-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="register.php">Register</a></li>
-        <li><a href="pages/referral.html">Make Referral</a></li>
-      </ul>
-    </div>
-    <div>
-      <h3>Contact</h3>
-      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
-      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
-    </div>
-  </div>
-  <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved.</p>
-</footer>
-
-<script src="js/main.js"></script>
 </body>
 </html>
