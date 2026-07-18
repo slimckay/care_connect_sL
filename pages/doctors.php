@@ -1,103 +1,56 @@
-<?php
-/**
- * Find Care Providers - Care Connect SL
- * Search functionality for doctors and providers
- */
-
-// Start session
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Include database
-require_once '../db.php';
-
-// Get search query
-$search = isset($_GET['search']) ? sanitizeInput($_GET['search']) : '';
-$results = [];
-$hasSearched = false;
-
-// Perform search if query exists
-if (!empty($search)) {
-    $hasSearched = true;
-    try {
-        // Search for providers in users table
-        $stmt = $conn->prepare("
-            SELECT 
-                u.id, 
-                u.name, 
-                u.email, 
-                u.role,
-                p.specialty,
-                p.qualifications,
-                p.experience_years,
-                p.clinic_name,
-                p.is_accepting_patients,
-                p.created_at
-            FROM users u
-            LEFT JOIN provider_profiles p ON u.id = p.user_id
-            WHERE u.role IN ('doctor', 'hospital')
-            AND u.status = 'active'
-            AND (
-                u.name LIKE ? 
-                OR p.specialty LIKE ? 
-                OR p.clinic_name LIKE ? 
-                OR u.email LIKE ?
-            )
-            ORDER BY u.name ASC
-            LIMIT 20
-        ");
-        
-        $searchTerm = '%' . $search . '%';
-        $stmt->execute([$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
-        $results = $stmt->fetchAll();
-        
-    } catch (PDOException $e) {
-        error_log("Search error: " . $e->getMessage());
-        $error = "Search failed. Please try again.";
-    }
-}
-
-// Get featured providers (no search)
-try {
-    $featuredStmt = $conn->prepare("
-        SELECT 
-            u.id, 
-            u.name, 
-            u.role,
-            p.specialty,
-            p.clinic_name,
-            p.is_accepting_patients
-        FROM users u
-        LEFT JOIN provider_profiles p ON u.id = p.user_id
-        WHERE u.role IN ('doctor', 'hospital')
-        AND u.status = 'active'
-        AND p.is_accepting_patients = 1
-        LIMIT 5
-    ");
-    $featuredStmt->execute();
-    $featuredProviders = $featuredStmt->fetchAll();
-} catch (PDOException $e) {
-    $featuredProviders = [];
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Find healthcare providers, doctors, and community health workers across Sierra Leone with Care Connect SL.">
-  <title>Find Care Providers — Care Connect SL</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../style.css">
+  <title>Find Doctors — Care Connect SL</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <base href="/">
 </head>
 <body>
-<div id="preloader" role="status" aria-label="Loading">
-  <div class="pulse-ring"></div>
-  <svg class="heartbeat-svg" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <polyline points="0,40 60,40 80,10 100,70 120,5 140,75 160,40 300,40" fill="none" stroke="#00C896" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-  <p class="preload-text">Care Connect SL</p>
-</div>
 
-<!-- ... rest of your HTML ... -->
+<header>
+  <div class="nav-inner">
+    <a href="/" class="logo">Care<span class="accent">Connect</span> SL</a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/pages/doctors.php" class="active">Find Care</a></li>
+        <li><a href="/pages/hospitals.html">Clinics</a></li>
+        <li><a href="/pages/about.html">About</a></li>
+        <li><a href="/pages/contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login.php" class="btn-ghost">Sign In</a>
+      <a href="/register.php" class="btn-primary">Register</a>
+    </div>
+  </div>
+</header>
+
+<main class="page-content">
+  <section class="page-hero">
+    <h1>Find Doctors & Health Workers</h1>
+    <p>Connect with trusted doctors, nurses, and community health workers across Sierra Leone.</p>
+  </section>
+
+  <div style="max-width: 900px; margin: 40px auto; padding: 0 24px;">
+    <p style="text-align:center; color:var(--muted);">Doctor directory coming soon. In the meantime, use our AI assistant or submit a referral.</p>
+    <div style="text-align:center; margin-top:30px;">
+      <a href="/ai-chat.php" class="btn-primary">💬 Ask AI for Help</a>
+      <a href="/pages/referral.html" class="btn-ghost" style="margin-left:12px;">Submit a Referral</a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-grid container">
+    <div><a href="/" class="logo">Care<span class="accent">Connect</span> SL</a></div>
+  </div>
+  <p class="footer-note">&copy; 2026 Care Connect SL</p>
+</footer>
+
+<script src="/js/main.js"></script>
+</body>
+</html>
