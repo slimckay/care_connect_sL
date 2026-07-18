@@ -101,7 +101,7 @@ try {
 <header role="banner">
     <div class="nav-inner">
         <a href="../index.html" class="logo" aria-label="Care Connect SL Home">
-            <span class="logo-icon" aria-hidden="true">❤️</span> Care<span class="accent">Connect</span> SL
+            Care<span class="accent">Connect</span> SL
         </a>
         <nav aria-label="Main navigation">
             <ul class="nav-links" role="menubar">
