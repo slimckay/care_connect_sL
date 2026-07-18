@@ -1,14 +1,18 @@
 <?php
 /**
  * Live chat UI — Care Connect SL
- * Uses JSON API + fast polling (WebSocket-style realtime on PHP/Render).
+ * Supports ?c=conversationId and ?start=providerId (from doctor profile Message button)
  */
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
+    $redirect = '../login.php';
+    if (!empty($_SERVER['REQUEST_URI'])) {
+        $redirect .= '?redirect=' . urlencode($_SERVER['REQUEST_URI']);
+    }
+    header('Location: ' . $redirect);
     exit;
 }
 
@@ -23,6 +27,7 @@ if (!in_array($role, ['patient', 'doctor', 'hospital'], true)) {
 
 $backLink = $role === 'patient' ? 'patient-dashboard.php' : 'provider-dashboard.php';
 $initialConv = (int)($_GET['c'] ?? 0);
+$startProvider = (int)($_GET['start'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -132,7 +137,7 @@ $initialConv = (int)($_GET['c'] ?? 0);
     <div class="nav-actions">
       <button onclick="toggleDarkMode()" class="dark-toggle" type="button">🌓</button>
       <a href="<?= htmlspecialchars($backLink) ?>" class="btn-ghost">Dashboard</a>
-      <a href="../logout.php" class="btn-ghost">Logout</a>
+      <a href="../logout.php" class="btn-ghost btn-logout">Log out</a>
     </div>
   </div>
 </header>
@@ -173,12 +178,14 @@ $initialConv = (int)($_GET['c'] ?? 0);
 </main>
 
 <script src="../js/dark-mode.js"></script>
+<script src="../js/mobile-logout.js"></script>
 <script>
 (function () {
   const ME = <?= (int)$userId ?>;
   const ROLE = <?= json_encode($role) ?>;
   const API = '../api/chat-api.php';
   const initialConv = <?= (int)$initialConv ?>;
+  const startProvider = <?= (int)$startProvider ?>;
 
   let activeId = 0;
   let lastMsgId = 0;
@@ -200,7 +207,7 @@ $initialConv = (int)($_GET['c'] ?? 0);
 
   function fmtTime(ts) {
     if (!ts) return '';
-    const d = new Date(ts.replace(' ', 'T'));
+    const d = new Date(String(ts).replace(' ', 'T'));
     if (isNaN(d.getTime())) return ts;
     return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
   }
@@ -249,7 +256,6 @@ $initialConv = (int)($_GET['c'] ?? 0);
     div.className = 'bubble ' + (mine ? 'me' : 'them') + (animate ? ' new-in' : '');
     div.dataset.id = id;
     div.innerHTML = `${esc(m.message).replace(/\n/g, '<br>')}<div class="meta">${mine ? 'You' : esc(m.sender_name || '')} · ${fmtTime(m.created_at)}</div>`;
-    // remove empty state
     const empty = threadBody.querySelector('.empty');
     if (empty) empty.remove();
     threadBody.appendChild(div);
@@ -268,7 +274,6 @@ $initialConv = (int)($_GET['c'] ?? 0);
     threadBody.innerHTML = '<div class="empty">Loading messages...</div>';
     sendForm.style.display = 'flex';
 
-    // highlight
     convList.querySelectorAll('.conv-item').forEach(el => {
       el.classList.toggle('active', parseInt(el.dataset.id, 10) === id);
     });
@@ -292,6 +297,27 @@ $initialConv = (int)($_GET['c'] ?? 0);
     pollTimer = setInterval(pollNew, 2000);
     loadConversations();
     messageInput.focus();
+
+    // Clean start/c params from URL
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, '', 'messages.php?c=' + id);
+    }
+  }
+
+  async function startWithProvider(pid) {
+    if (!pid) return;
+    if (ROLE !== 'patient') {
+      alert('Only patients can start a chat from a doctor profile.');
+      return;
+    }
+    threadBody.innerHTML = '<div class="empty">Opening chat...</div>';
+    const data = await api('start', { method: 'POST', body: { provider_id: pid } });
+    if (data.ok) {
+      await loadConversations();
+      openConversation(parseInt(data.conversation_id, 10));
+    } else {
+      threadBody.innerHTML = '<div class="empty">' + esc(data.error || 'Could not start chat') + '</div>';
+    }
   }
 
   async function pollNew() {
@@ -338,7 +364,6 @@ $initialConv = (int)($_GET['c'] ?? 0);
     }
   });
 
-  // Patient: start chat
   const startBtn = document.getElementById('startChatBtn');
   const providerSelect = document.getElementById('providerSelect');
   if (startBtn && providerSelect) {
@@ -347,30 +372,27 @@ $initialConv = (int)($_GET['c'] ?? 0);
       const list = data.providers || [];
       providerSelect.innerHTML = '<option value="">Choose doctor / clinic...</option>' +
         list.map(p => `<option value="${p.id}">${esc(p.name)}${p.specialty ? ' — ' + esc(p.specialty) : ''}</option>`).join('');
+      if (startProvider > 0) providerSelect.value = String(startProvider);
     });
 
     startBtn.addEventListener('click', async () => {
       const pid = parseInt(providerSelect.value, 10);
       if (!pid) return alert('Choose a provider first');
       startBtn.disabled = true;
-      try {
-        const data = await api('start', { method: 'POST', body: { provider_id: pid } });
-        if (data.ok) {
-          await loadConversations();
-          openConversation(parseInt(data.conversation_id, 10));
-        } else alert(data.error || 'Could not start chat');
-      } finally {
-        startBtn.disabled = false;
-      }
+      try { await startWithProvider(pid); }
+      finally { startBtn.disabled = false; }
     });
   }
 
-  // Init
-  loadConversations().then(() => {
-    if (initialConv > 0) openConversation(initialConv);
+  // Init: open existing chat, or start from doctor profile Message button
+  loadConversations().then(async () => {
+    if (initialConv > 0) {
+      openConversation(initialConv);
+    } else if (startProvider > 0) {
+      await startWithProvider(startProvider);
+    }
   });
 
-  // Refresh conversation list periodically
   setInterval(() => {
     if (!document.hidden) loadConversations();
   }, 8000);
