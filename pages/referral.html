@@ -21,10 +21,10 @@
       margin-bottom: 8px;
       color: #0F1C3A !important;
     }
-    .form-card > p {
+    .form-card > p.subtitle {
       text-align: center;
       color: #64748B !important;
-      margin-bottom: 30px;
+      margin-bottom: 24px;
     }
     .form-group { margin-bottom: 20px; }
     .form-group label {
@@ -33,35 +33,100 @@
       margin-bottom: 8px;
       color: #1F2937 !important;
     }
-    .form-group input, .form-group textarea {
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
       width: 100%;
       padding: 13px 16px;
       border: 2px solid #E5E7EB;
       border-radius: 10px;
       color: #1F2937;
       background: #fff;
+      font-family: inherit;
+      font-size: 1rem;
     }
-    .btn-primary { width: 100%; padding: 15px; font-size: 1.1rem; }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #1EB53A;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 15px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #1EB53A, #0000CD);
+      color: white;
+      font-weight: 700;
+    }
+    .btn-primary:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
 
-    /* Dark mode overrides */
+    /* Toast / notification */
+    .toast {
+      display: none;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      margin-bottom: 22px;
+      font-size: 0.98rem;
+      line-height: 1.45;
+      border: 1px solid transparent;
+    }
+    .toast.show { display: flex; }
+    .toast.success {
+      background: #ECFDF5;
+      border-color: #A7F3D0;
+      color: #065F46;
+    }
+    .toast.error {
+      background: #FEF2F2;
+      border-color: #FECACA;
+      color: #991B1B;
+    }
+    .toast .toast-icon { font-size: 1.35rem; line-height: 1; }
+    .toast .toast-body { flex: 1; }
+    .toast .toast-body strong { display: block; margin-bottom: 2px; }
+    .toast .toast-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0.6;
+      color: inherit;
+      padding: 0;
+      line-height: 1;
+    }
+
     [data-theme="dark"] .form-card {
       background: #1e293b !important;
       color: #e2e8f0 !important;
     }
-    [data-theme="dark"] .form-card h1 {
-      color: #f8fafc !important;
-    }
-    [data-theme="dark"] .form-card > p {
-      color: #94A3B8 !important;
-    }
-    [data-theme="dark"] .form-group label {
-      color: #e2e8f0 !important;
-    }
+    [data-theme="dark"] .form-card h1 { color: #f8fafc !important; }
+    [data-theme="dark"] .form-card > p.subtitle { color: #94A3B8 !important; }
+    [data-theme="dark"] .form-group label { color: #e2e8f0 !important; }
     [data-theme="dark"] .form-group input,
-    [data-theme="dark"] .form-group textarea {
+    [data-theme="dark"] .form-group textarea,
+    [data-theme="dark"] .form-group select {
       background: #0f172a !important;
       color: #e2e8f0 !important;
       border-color: #334155 !important;
+    }
+    [data-theme="dark"] .toast.success {
+      background: #064E3B;
+      border-color: #059669;
+      color: #D1FAE5;
+    }
+    [data-theme="dark"] .toast.error {
+      background: #7F1D1D;
+      border-color: #DC2626;
+      color: #FEE2E2;
     }
   </style>
 </head>
@@ -73,6 +138,7 @@
     <nav>
       <ul class="nav-links">
         <li><a href="/">Home</a></li>
+        <li><a href="/pages/doctors.php">Find Care</a></li>
         <li><a href="/pages/referral.html" class="active">Referrals</a></li>
         <li><a href="/pages/contact.html">Contact</a></li>
       </ul>
@@ -88,34 +154,113 @@
 <div class="form-container">
   <div class="form-card">
     <h1>Submit a Referral</h1>
-    <p>Fill in the patient details below</p>
+    <p class="subtitle">Fill in the patient details below. Our team will follow up.</p>
 
-    <form method="POST" action="/referral-submit.php">
-      <div class="form-group">
-        <label>Patient Full Name</label>
-        <input type="text" name="patient_name" required>
+    <!-- Success / error notification -->
+    <div id="toast" class="toast" role="alert" aria-live="polite">
+      <div class="toast-icon" id="toastIcon"></div>
+      <div class="toast-body">
+        <strong id="toastTitle"></strong>
+        <span id="toastMessage"></span>
       </div>
+      <button type="button" class="toast-close" onclick="hideToast()" aria-label="Close">×</button>
+    </div>
+
+    <form id="referralForm" method="POST" action="/referral.php">
       <div class="form-group">
-        <label>Age</label>
-        <input type="number" name="age" required>
+        <label for="patient_name">Patient Full Name *</label>
+        <input type="text" id="patient_name" name="patient_name" required minlength="2" maxlength="100" placeholder="e.g. Mariama Sesay">
       </div>
+
       <div class="form-group">
-        <label>Contact Number</label>
-        <input type="tel" name="contact" required>
+        <label for="age">Age</label>
+        <input type="number" id="age" name="age" min="0" max="150" placeholder="e.g. 28">
       </div>
+
       <div class="form-group">
-        <label>Location / Area</label>
-        <input type="text" name="location" required>
+        <label for="contact">Contact Number or Email *</label>
+        <input type="text" id="contact" name="contact" required maxlength="100" placeholder="e.g. +232 76 000 000">
       </div>
+
       <div class="form-group">
-        <label>Medical Condition / Reason</label>
-        <textarea name="condition" rows="5" required></textarea>
+        <label for="location">Location / Area *</label>
+        <input type="text" id="location" name="location" required minlength="3" maxlength="200" placeholder="e.g. Kissy, Freetown">
       </div>
-      <button type="submit" class="btn-primary">Submit Referral</button>
+
+      <div class="form-group">
+        <label for="preferred_clinic">Preferred Clinic (optional)</label>
+        <input type="text" id="preferred_clinic" name="preferred_clinic" maxlength="100" placeholder="e.g. Connaught Hospital">
+      </div>
+
+      <div class="form-group">
+        <label for="condition">Medical Condition / Reason *</label>
+        <textarea id="condition" name="condition" rows="5" required minlength="5" maxlength="1000" placeholder="Briefly describe the condition or why care is needed"></textarea>
+      </div>
+
+      <input type="hidden" name="referrer" value="self">
+
+      <button type="submit" class="btn-primary" id="submitBtn">Submit Referral</button>
     </form>
   </div>
 </div>
 
 <script src="/js/dark-mode.js"></script>
+<script>
+  function showToast(type, title, message) {
+    const toast = document.getElementById('toast');
+    const icon = document.getElementById('toastIcon');
+    const titleEl = document.getElementById('toastTitle');
+    const msgEl = document.getElementById('toastMessage');
+
+    toast.className = 'toast show ' + type;
+    icon.textContent = type === 'success' ? '✅' : '⚠️';
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+
+    // Auto-hide success after 8s
+    if (type === 'success') {
+      setTimeout(hideToast, 8000);
+    }
+  }
+
+  function hideToast() {
+    const toast = document.getElementById('toast');
+    toast.classList.remove('show');
+  }
+
+  // Read URL params on load
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('sent') === '1') {
+      showToast(
+        'success',
+        'Referral submitted successfully!',
+        'Our team has received it and will follow up soon. You can submit another referral below if needed.'
+      );
+      // Clean URL so refresh does not re-show toast forever
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    const error = params.get('error');
+    if (error) {
+      let message = 'Something went wrong. Please try again.';
+      if (error === 'validation') message = 'Please check the form fields and try again.';
+      if (error === 'too_many') message = 'Too many submissions from this device. Please wait a while and try again.';
+      if (error === 'server') message = 'Server error while saving. Please try again in a moment.';
+      if (error === 'csrf') message = 'Session expired. Please refresh the page and try again.';
+
+      showToast('error', 'Could not submit referral', message);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  })();
+
+  // Disable button while submitting to prevent double-submit
+  document.getElementById('referralForm').addEventListener('submit', function () {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+  });
+</script>
 </body>
 </html>
