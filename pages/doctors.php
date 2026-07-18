@@ -6,25 +6,47 @@
   <title>Find Doctors — Care Connect SL</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
+  <base href="/">
 </head>
 <body>
 
 <header>
   <div class="nav-inner">
     <a href="/" class="logo">Care<span class="accent">Connect</span> SL</a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/pages/doctors.php" class="active">Find Care</a></li>
+        <li><a href="/pages/hospitals.html">Clinics</a></li>
+        <li><a href="/pages/referral.html">Referrals</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
+      <a href="/login.php" class="btn-ghost">Sign In</a>
+      <a href="/register.php" class="btn-primary">Get Started</a>
+    </div>
   </div>
 </header>
 
-<main style="padding: 40px 20px; max-width: 1000px; margin: 0 auto;">
+<main style="padding: 60px 20px; text-align: center; max-width: 800px; margin: 0 auto;">
   <h1>Find Verified Doctors</h1>
-  <p>Only verified healthcare providers are shown here.</p>
+  <p style="max-width: 600px; margin: 20px auto; color: #64748B;">
+    Connect with trusted and verified doctors across Sierra Leone.
+  </p>
 
-  <div style="margin-top:40px; background:#f8fafc; padding:40px; border-radius:16px; text-align:center;">
+  <div style="margin: 50px 0; padding: 40px; background: #f8fafc; border-radius: 16px;">
     <h3>Verified Doctor Directory Coming Soon</h3>
-    <p style="color:#64748B;">We are currently verifying providers. Check back soon.</p>
-    <a href="/ai-chat.php" class="btn-primary" style="margin-top:20px; display:inline-block;">Ask AI for Recommendations</a>
+    <p style="color: #64748B; margin-top: 12px;">
+      We are currently verifying healthcare providers.
+    </p>
+    <div style="margin-top: 30px;">
+      <a href="/ai-chat.php" class="btn-primary" style="margin-right: 12px;">💬 Ask AI for Recommendations</a>
+      <a href="/pages/referral.html" class="btn-ghost">Submit a Referral</a>
+    </div>
   </div>
 </main>
 
+<script src="/js/dark-mode.js"></script>
 </body>
 </html>

@@ -21,6 +21,11 @@
       width: 100%; padding: 13px 16px; border: 2px solid #E5E7EB; border-radius: 10px;
     }
     .btn-primary { width: 100%; padding: 15px; font-size: 1.1rem; }
+
+    [data-theme="dark"] .form-card {
+      background: #1e293b;
+      color: #e2e8f0;
+    }
   </style>
 </head>
 <body>
@@ -28,6 +33,18 @@
 <header>
   <div class="nav-inner">
     <a href="/" class="logo">Care<span class="accent">Connect</span> SL</a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/pages/referral.html" class="active">Referrals</a></li>
+        <li><a href="/pages/contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
+      <a href="/login.php" class="btn-ghost">Sign In</a>
+      <a href="/register.php" class="btn-primary">Get Started</a>
+    </div>
   </div>
 </header>
 
@@ -62,5 +79,6 @@
   </div>
 </div>
 
+<script src="/js/dark-mode.js"></script>
 </body>
 </html>

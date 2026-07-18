@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Privacy Policy for Care Connect SL.">
   <title>Privacy Policy — Care Connect SL</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -18,38 +17,34 @@
         <li><a href="index.html">Home</a></li>
         <li><a href="pages/about.html">About</a></li>
         <li><a href="pages/contact.html">Contact</a></li>
-        <li><a href="privacy.html" class="active">Privacy</a></li>
         <li><a href="terms.html">Terms</a></li>
+        <li><a href="privacy.html" class="active">Privacy</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
-      <a href="login.php" class="btn-ghost">Sign In</a>
-      <a href="register.php" class="btn-primary">✨ Register</a>
+      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
     </div>
   </div>
 </header>
 
-<main class="page-content">
-  <section class="page-hero">
-    <h1>Privacy Policy</h1>
-    <p>Last updated: January 2026</p>
-  </section>
+<main class="page-content" style="max-width: 900px; margin: 40px auto; padding: 0 20px;">
+  <h1>Privacy Policy</h1>
+  <p style="color: #64748B; margin-bottom: 30px;">Last updated: January 2026</p>
 
-  <div class="terms-card">
+  <div class="terms-card" style="background:#fff; padding:30px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.06); margin-bottom:24px;">
     <h2>1. Information We Collect</h2>
-    <p>We collect information you provide when using our platform (name, email, medical details for referrals, etc.).</p>
+    <p>We collect personal information such as name, email, phone number, and medical details when you use our platform.</p>
   </div>
 
-  <div class="terms-card">
+  <div class="terms-card" style="background:#fff; padding:30px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.06); margin-bottom:24px;">
     <h2>2. How We Use Your Information</h2>
-    <p>We use your information to process referrals, connect you with healthcare providers, and improve our services.</p>
+    <p>We use your information to facilitate referrals, improve our services, and communicate with you.</p>
   </div>
 
-  <div class="terms-card">
+  <div class="terms-card" style="background:#fff; padding:30px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.06); margin-bottom:24px;">
     <h2>3. Data Protection</h2>
-    <p>Your data is stored securely. We do not sell your personal information.</p>
+    <p>We take reasonable measures to protect your personal information from unauthorized access.</p>
   </div>
-
 </main>
 
 <footer class="site-footer">
@@ -59,6 +54,6 @@
   <p class="footer-note">&copy; 2026 Care Connect SL</p>
 </footer>
 
-<script src="js/main.js"></script>
+<script src="js/dark-mode.js"></script>
 </body>
 </html>
