@@ -1,62 +1,44 @@
 <?php
-// Contact form processing with error handling
 session_start();
 require_once __DIR__ . '/../db.php';
 
 $success = false;
 $errors = [];
-$formData = ['name' => '', 'email' => '', 'subject' => '', 'message' => ''];
+$formData = ['name' => '', 'email' => '', 'phone' => '', 'message' => ''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Sanitize inputs
-    $formData['name'] = trim($_POST['name'] ?? '');
-    $formData['email'] = trim($_POST['email'] ?? '');
-    $formData['subject'] = trim($_POST['subject'] ?? '');
+    $formData['name']    = trim($_POST['name'] ?? '');
+    $formData['email']   = trim($_POST['email'] ?? '');
+    $formData['phone']   = trim($_POST['phone'] ?? '');
     $formData['message'] = trim($_POST['message'] ?? '');
 
-    // Validation
     if (empty($formData['name'])) {
-        $errors[] = 'Name is required.';
-    } elseif (strlen($formData['name']) < 2) {
-        $errors[] = 'Name must be at least 2 characters.';
+        $errors[] = "Name is required.";
+    }
+    if (empty($formData['email']) || !filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Please enter a valid email address.";
+    }
+    if (empty($formData['message']) || strlen($formData['message']) < 10) {
+        $errors[] = "Message must be at least 10 characters.";
     }
 
-    if (empty($formData['email'])) {
-        $errors[] = 'Email is required.';
-    } elseif (!filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Please enter a valid email address.';
-    }
-
-    if (empty($formData['subject'])) {
-        $errors[] = 'Subject is required.';
-    }
-
-    if (empty($formData['message'])) {
-        $errors[] = 'Message is required.';
-    } elseif (strlen($formData['message']) < 10) {
-        $errors[] = 'Message must be at least 10 characters.';
-    }
-
-    // If no errors, save to database
     if (empty($errors)) {
         try {
             $stmt = $conn->prepare("
-                INSERT INTO contact_messages (name, email, subject, message, created_at)
-                VALUES (?, ?, ?, ?, NOW())
+                INSERT INTO contact_messages (name, email, phone, message, status, created_at) 
+                VALUES (?, ?, ?, ?, 'new', NOW())
             ");
             $stmt->execute([
                 $formData['name'],
                 $formData['email'],
-                $formData['subject'],
+                $formData['phone'],
                 $formData['message']
             ]);
 
             $success = true;
-            // Clear form data after successful submission
-            $formData = ['name' => '', 'email' => '', 'subject' => '', 'message' => ''];
+            $formData = ['name' => '', 'email' => '', 'phone' => '', 'message' => ''];
         } catch (PDOException $e) {
-            error_log("Contact form error: " . $e->getMessage());
-            $errors[] = 'Something went wrong. Please try again later.';
+            $errors[] = "Something went wrong. Please try again later.";
         }
     }
 }
@@ -66,7 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Contact Care Connect SL - Get in touch with our team in Sierra Leone.">
   <title>Contact — Care Connect SL</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
@@ -76,223 +57,128 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 24px;
-      max-width: 1000px;
-      margin: 60px auto;
-      padding: 0 24px;
+      max-width: 1100px;
+      margin: 50px auto;
+      padding: 0 20px;
     }
     .contact-card {
       background: #fff;
-      border-radius: 20px;
-      padding: 40px 32px;
-      box-shadow: 0 10px 40px rgba(30,181,58,0.1);
-      border: 1px solid rgba(30,181,58,0.08);
-      transition: transform 0.3s, box-shadow 0.3s;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
-    .contact-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 20px 50px rgba(30,181,58,0.15);
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 6px; }
+    .form-group input, .form-group textarea {
+      width: 100%; padding: 12px 16px; border: 2px solid #E5E7EB; border-radius: 10px;
     }
-    .contact-card h3 {
-      font-size: 1.4rem;
-      margin-bottom: 16px;
-      color: #0F1C3A;
-    }
-    .contact-card p {
-      color: #64748B;
-      line-height: 1.7;
-      margin-bottom: 12px;
-    }
-    .contact-card a {
-      color: #1EB53A;
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .contact-card a:hover {
-      text-decoration: underline;
-    }
-    .btn-block {
-      display: block;
-      width: 100%;
-      text-align: center;
-      margin-top: 20px;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #1F2937;
-    }
-    .form-group input,
-    .form-group textarea {
-      width: 100%;
-      padding: 14px 18px;
-      border: 2px solid #E5E7EB;
-      border-radius: 12px;
-      font-size: 1rem;
-      transition: border-color 0.3s;
-    }
-    .form-group input:focus,
-    .form-group textarea:focus {
-      border-color: #1EB53A;
-      box-shadow: 0 0 0 4px rgba(30,181,58,0.1);
-      outline: none;
+    .form-group textarea { min-height: 120px; }
+    .btn-primary { width: 100%; padding: 14px; font-size: 1.05rem; }
+    .success-box {
+      background: #D1FAE5; color: #065F46; padding: 20px; border-radius: 12px; margin-bottom: 30px;
     }
     .error-box {
-      background: #FEE2E2;
-      color: #991B1B;
-      padding: 16px 20px;
-      border-radius: 12px;
-      margin-bottom: 24px;
-    }
-    .success-box {
-      background: #D1FAE5;
-      color: #065F46;
-      padding: 20px 24px;
-      border-radius: 16px;
-      text-align: center;
-      margin-bottom: 30px;
+      background: #FEE2E2; color: #991B1B; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
 
-<!-- Professional Header -->
-<header role="banner">
+<header>
   <div class="nav-inner">
-    <a href="/" class="logo" aria-label="Care Connect SL Home">
-      Care<span class="accent">Connect</span> SL
-    </a>
-    <nav aria-label="Main navigation">
+    <a href="/" class="logo">Care<span class="accent">Connect</span> SL</a>
+    <nav>
       <ul class="nav-links">
         <li><a href="/">Home</a></li>
         <li><a href="/pages/doctors.php">Find Care</a></li>
-        <li><a href="/pages/hospitals.html">Clinics</a></li>
-        <li><a href="/pages/referral.html">Referrals</a></li>
         <li><a href="/pages/about.html">About</a></li>
-        <li><a href="/pages/contact.html" class="active" aria-current="page">Contact</a></li>
-        <li><a href="/ai-chat.php" style="color:#1EB53A; font-weight:600;">💬 AI Assistant</a></li>
+        <li><a href="/pages/contact.html" class="active">Contact</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
       <a href="/login.php" class="btn-ghost">Sign In</a>
-      <a href="/register.php" class="btn-primary">✨ Register</a>
+      <a href="/register.php" class="btn-primary">Get Started</a>
     </div>
   </div>
 </header>
 
-<main class="page-content">
-  <!-- Hero Section -->
-  <section class="page-hero" style="padding: 80px 24px 60px; text-align: center; background: linear-gradient(135deg, #0F1C3A 0%, #1a2a4a 100%); color: white;">
-    <h1 style="font-size: clamp(2.4rem, 5vw, 3.5rem); margin-bottom: 16px; color: white;">Get in Touch</h1>
-    <p style="max-width: 600px; margin: 0 auto; font-size: 1.2rem; opacity: 0.95;">
-      We're here to help families, health workers, and clinics across Sierra Leone.
-    </p>
+<main>
+  <section class="page-hero" style="background: linear-gradient(135deg, #0F1C3A, #1a2a4a); color: white; padding: 70px 20px; text-align: center;">
+    <h1>Get in Touch</h1>
+    <p style="max-width: 600px; margin: 10px auto 0; opacity: 0.9;">We're here to support you and your community.</p>
   </section>
 
-  <!-- Success Message -->
-  <?php if ($success): ?>
-    <div style="max-width: 700px; margin: 40px auto 0; padding: 0 24px;">
-      <div class="success-box">
-        <h3 style="margin:0 0 8px 0; color:#065F46;">✅ Message Sent Successfully!</h3>
-        <p style="margin:0; color:#065F46;">Thank you! We'll get back to you within 24 hours.</p>
-      </div>
-    </div>
-  <?php endif; ?>
-
-  <!-- Contact Cards -->
   <div class="contact-grid">
+
+    <!-- Contact Info -->
     <div class="contact-card">
       <h3>📍 Our Office</h3>
       <p><strong>Freetown, Sierra Leone</strong></p>
-      <p style="margin: 16px 0;">
-        <a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a><br>
-        <a href="tel:+23276000000">+232 76 000 000</a>
-      </p>
-      <p style="color:#64748B; font-size:0.95rem;">We respond to emails within 24 hours.</p>
+      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
+      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
+      <p style="margin-top: 20px; color: #64748B;">We usually respond within 24 hours.</p>
     </div>
 
+    <!-- Contact Form -->
     <div class="contact-card">
-      <h3>💬 Need Help Fast?</h3>
-      <p>Chat with our AI assistant 24/7 for instant guidance on referrals, symptoms, or how to use Care Connect.</p>
-      <a href="/ai-chat.php" class="btn-primary btn-block">Chat with AI Now →</a>
-    </div>
-  </div>
+      <h3 style="margin-bottom: 20px;">Send us a Message</h3>
 
-  <!-- Contact Form -->
-  <div style="max-width: 700px; margin: 60px auto; padding: 0 24px;">
-    <div class="auth-card" style="max-width: 100%;">
-      <h2 style="text-align:center; margin-bottom: 8px;">Send us a Message</h2>
-      <p style="text-align:center; color:#64748B; margin-bottom: 32px;">We'll respond within 24 hours</p>
-
-      <!-- Error Messages -->
-      <?php if (!empty($errors)): ?>
-        <div class="error-box">
-          <strong>Please fix the following:</strong>
-          <ul style="margin: 12px 0 0 20px; padding:0;">
-            <?php foreach ($errors as $error): ?>
-              <li><?= htmlspecialchars($error) ?></li>
-            <?php endforeach; ?>
-          </ul>
+      <?php if ($success): ?>
+        <div class="success-box">
+          <strong>✅ Message sent successfully!</strong><br>
+          Thank you. We'll get back to you soon.
         </div>
       <?php endif; ?>
 
-      <form method="POST" action="/pages/contact.html">
+      <?php if (!empty($errors)): ?>
+        <div class="error-box">
+          <?php foreach ($errors as $error): ?>
+            <p>• <?= htmlspecialchars($error) ?></p>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+
+      <form method="POST">
         <div class="form-group">
-          <label for="name">Your Full Name</label>
-          <input type="text" id="name" name="name" 
-                 value="<?= htmlspecialchars($formData['name']) ?>" required>
+          <label>Full Name</label>
+          <input type="text" name="name" value="<?= htmlspecialchars($formData['name']) ?>" required>
         </div>
 
         <div class="form-group">
-          <label for="email">Email Address</label>
-          <input type="email" id="email" name="email" 
-                 value="<?= htmlspecialchars($formData['email']) ?>" required>
+          <label>Email Address</label>
+          <input type="email" name="email" value="<?= htmlspecialchars($formData['email']) ?>" required>
         </div>
 
         <div class="form-group">
-          <label for="subject">Subject</label>
-          <input type="text" id="subject" name="subject" 
-                 value="<?= htmlspecialchars($formData['subject']) ?>" required>
+          <label>Phone Number (Optional)</label>
+          <input type="text" name="phone" value="<?= htmlspecialchars($formData['phone']) ?>">
         </div>
 
         <div class="form-group">
-          <label for="message">Your Message</label>
-          <textarea id="message" name="message" rows="6" required><?= htmlspecialchars($formData['message']) ?></textarea>
+          <label>Your Message</label>
+          <textarea name="message" required><?= htmlspecialchars($formData['message']) ?></textarea>
         </div>
 
         <button type="submit" class="btn-primary">Send Message</button>
       </form>
     </div>
+
   </div>
 </main>
 
-<!-- Footer -->
 <footer class="site-footer">
   <div class="footer-grid container">
+    <div><a href="/" class="logo">Care<span class="accent">Connect</span> SL</a></div>
     <div>
-      <a href="/" class="logo">Care<span class="accent">Connect</span> SL</a>
-      <p style="margin-top:8px; color:#94A3B8;">Home-based care referrals across Sierra Leone.</p>
-    </div>
-    <div>
-      <h3>Quick Links</h3>
+      <h3>Legal</h3>
       <ul class="footer-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/pages/about.html">About Us</a></li>
-        <li><a href="/ai-chat.php">AI Assistant</a></li>
+        <li><a href="/terms.html">Terms of Service</a></li>
+        <li><a href="/privacy.html">Privacy Policy</a></li>
       </ul>
     </div>
-    <div>
-      <h3>Contact</h3>
-      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
-      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
-    </div>
   </div>
-  <p class="footer-note">&copy; 2026 Care Connect SL. Made with ❤️ in Sierra Leone</p>
+  <p class="footer-note">&copy; 2026 Care Connect SL</p>
 </footer>
 
-<script src="/js/main.js"></script>
 </body>
 </html>
