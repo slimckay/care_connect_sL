@@ -26,6 +26,48 @@ $active = 'settings';
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <link rel="stylesheet" href="admin-styles.css">
+  <style>
+    .perm-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .perm-box {
+      border: 1px solid #E5E7EB;
+      border-radius: 14px;
+      padding: 16px 18px;
+      background: #F8FAFC;
+    }
+    .perm-box.can { border-color: #BBF7D0; background: #F0FDF4; }
+    .perm-box.cannot { border-color: #FECACA; background: #FEF2F2; }
+    .perm-box h3 {
+      margin: 0 0 12px;
+      font-size: 0.98rem;
+      color: #0F1C3A !important;
+    }
+    .perm-box ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #334155 !important;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .perm-box li { margin-bottom: 6px; }
+    .perm-note {
+      margin-top: 14px;
+      font-size: 0.88rem;
+      color: #64748B !important;
+      line-height: 1.5;
+    }
+    [data-theme="dark"] .perm-box { background: #0f172a; border-color: #334155; }
+    [data-theme="dark"] .perm-box.can { background: #052e16; border-color: #166534; }
+    [data-theme="dark"] .perm-box.cannot { background: #450a0a; border-color: #991b1b; }
+    [data-theme="dark"] .perm-box h3 { color: #F8FAFC !important; }
+    [data-theme="dark"] .perm-box ul { color: #E2E8F0 !important; }
+    @media (max-width: 800px) {
+      .perm-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body class="admin-body">
 <div class="admin-wrapper">
@@ -45,6 +87,50 @@ $active = 'settings';
 
     <div class="admin-content">
       <?php if ($message): ?><div class="alert success">✅ <?= htmlspecialchars($message) ?></div><?php endif; ?>
+
+      <div class="admin-card">
+        <div class="card-header">
+          <h2>🔐 Admin Permissions</h2>
+        </div>
+        <div class="card-body">
+          <p class="muted" style="margin:0 0 14px;">
+            Only accounts with the <strong>admin</strong> role can open this panel.
+            Logged in as <strong><?= htmlspecialchars($admin_name) ?></strong>.
+          </p>
+
+          <div class="perm-grid">
+            <div class="perm-box can">
+              <h3>✅ Admins can</h3>
+              <ul>
+                <li>View dashboard stats and notifications</li>
+                <li>Update referral status (pending, in progress, completed, cancelled)</li>
+                <li>Set and edit patient follow-up dates and notes</li>
+                <li>Activate, deactivate, or ban user accounts</li>
+                <li>Verify or reject provider applications</li>
+                <li>Update basic system settings (site name, support contact)</li>
+              </ul>
+            </div>
+
+            <div class="perm-box cannot">
+              <h3>🚫 Admins cannot</h3>
+              <ul>
+                <li>Edit a provider’s full clinic profile the way the provider does</li>
+                <li>Upload provider verification documents for them</li>
+                <li>Change another user’s password from this panel</li>
+                <li>Access provider payment wallets beyond operational records</li>
+                <li>Open admin pages without an admin role session</li>
+              </ul>
+            </div>
+          </div>
+
+          <p class="perm-note">
+            <strong>Roles at a glance:</strong>
+            Admin = control panel ·
+            Doctor / Hospital = own cases, profile, follow-ups ·
+            Patient = submit referrals and view own activity.
+          </p>
+        </div>
+      </div>
 
       <div class="admin-card">
         <div class="card-header">
