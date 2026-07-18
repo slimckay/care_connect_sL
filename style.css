@@ -82,7 +82,7 @@
 }
 
 /* ============================================
-   DARK MODE OVERRIDES
+   DARK MODE OVERRIDES (Stronger)
    ============================================ */
 [data-theme="dark"] {
   --bg-color: var(--dark-bg);
@@ -95,8 +95,8 @@
   --navy: #0f172a;
   
   body { 
-    background: var(--dark-bg); 
-    color: var(--dark-text); 
+    background: var(--dark-bg) !important; 
+    color: var(--dark-text) !important; 
   }
   
   header { 
@@ -104,18 +104,23 @@
     border-color: var(--dark-border); 
   }
   
+  h1, h2, h3, h4, h5, h6 {
+    color: #f8fafc !important;
+  }
+  
+  p, li, span, label, div {
+    color: #e2e8f0;
+  }
+  
   .card, .glass, .testimonial, .provider-card, .profile-card,
   .auth-card, .form-card, .contact-card {
-    background: var(--dark-surface);
+    background: var(--dark-surface) !important;
     border-color: var(--dark-border);
     color: var(--dark-text);
   }
   
-  .nav-links a { color: var(--dark-text); }
-  .nav-links a:hover, .nav-links a.active { color: var(--primary); }
-  
-  .btn-ghost { border-color: var(--primary); color: var(--primary); }
-  .btn-ghost:hover { background: var(--primary); color: white; }
+  .nav-links a { color: var(--dark-text) !important; }
+  .nav-links a:hover, .nav-links a.active { color: var(--primary) !important; }
   
   input, select, textarea { 
     background: var(--dark-surface); 
@@ -125,22 +130,11 @@
   
   .site-footer { background: #020617; }
   
-  /* Fix white text issues in dark mode */
-  h1, h2, h3, h4, h5 { 
-    color: #f8fafc !important; 
-  }
-  
-  p, li, span, label {
-    color: #e2e8f0;
-  }
-  
-  a {
-    color: var(--primary-light);
-  }
+  a { color: var(--primary-light); }
 }
 
 /* ============================================
-   RESET & BASE
+   RESET & BASE (Light Mode - Strong)
    ============================================ */
 *,
 *::before,
@@ -159,13 +153,21 @@ body {
   font-family: var(--font-primary);
   font-size: 16px;
   line-height: 1.7;
-  color: var(--dark-text);
+  color: #1F2937 !important; /* Force dark text in light mode */
   background: var(--sl-white-off);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   position: relative;
   overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #0F1C3A !important; /* Force dark headings in light mode */
+}
+
+p, li, span, label {
+  color: #1F2937;
 }
 
 body::before {
