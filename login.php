@@ -5,7 +5,31 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/db.php';
 
+/**
+ * Only allow safe internal redirects (no external URLs)
+ */
+function safeRedirectTarget(?string $target): ?string
+{
+    if (!$target) return null;
+    $target = trim($target);
+    if ($target === '' || str_contains($target, '://') || str_starts_with($target, '//')) {
+        return null;
+    }
+    if ($target[0] !== '/') {
+        $target = '/' . $target;
+    }
+    // block weird paths
+    if (str_contains($target, '..')) return null;
+    return $target;
+}
+
+$redirectParam = safeRedirectTarget($_GET['redirect'] ?? ($_POST['redirect'] ?? null));
+
 if (isset($_SESSION['user_id'])) {
+    if ($redirectParam) {
+        header('Location: ' . $redirectParam);
+        exit;
+    }
     $role = $_SESSION['role'] ?? 'patient';
     if ($role === 'admin') header('Location: admin/admin-dashboard.php');
     elseif (in_array($role, ['doctor', 'hospital'])) header('Location: dashboard/provider-dashboard.php');
@@ -17,6 +41,7 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $redirectParam = safeRedirectTarget($_POST['redirect'] ?? $redirectParam);
 
     if (empty($email) || empty($password)) {
         $error = 'Please enter email and password.';
@@ -34,6 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($user['role'] === 'admin') {
                     $_SESSION['admin_logged_in'] = true;
+                }
+
+                if ($redirectParam) {
+                    header('Location: ' . $redirectParam);
+                    exit;
+                }
+
+                if ($user['role'] === 'admin') {
                     header('Location: admin/admin-dashboard.php');
                 } elseif (in_array($user['role'], ['doctor', 'hospital'])) {
                     header('Location: dashboard/provider-dashboard.php');
@@ -139,6 +172,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST">
+            <?php if ($redirectParam): ?>
+              <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectParam) ?>">
+            <?php endif; ?>
+
             <div class="form-group">
                 <label>Email Address</label>
                 <input type="email" name="email" required>
