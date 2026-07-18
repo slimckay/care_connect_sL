@@ -12,6 +12,27 @@ require_once '../db.php';
 
 $user_id = $_SESSION['user_id'];
 
+// Handle photo upload
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profile_photo'])) {
+    $uploadDir = __DIR__ . '/../uploads/profile/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
+    if ($_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
+        $ext = pathinfo($_FILES['profile_photo']['name'], PATHINFO_EXTENSION);
+        $filename = 'provider_' . $user_id . '_' . time() . '.' . $ext;
+        $destination = $uploadDir . $filename;
+
+        if (move_uploaded_file($_FILES['profile_photo']['tmp_name'], $destination)) {
+            $photoPath = 'uploads/profile/' . $filename;
+            $conn->prepare("UPDATE provider_profiles SET profile_photo = ? WHERE user_id = ?")
+                 ->execute([$photoPath, $user_id]);
+        }
+    }
+}
+
+// Get profile data
 $stmt = $conn->prepare("
     SELECT p.*, u.name, u.email 
     FROM provider_profiles p 
@@ -21,6 +42,7 @@ $stmt = $conn->prepare("
 $stmt->execute([$user_id]);
 $profile = $stmt->fetch();
 
+$photo = $profile['profile_photo'] ?? '';
 $verificationStatus = $profile['verification_status'] ?? 'pending';
 ?>
 <!DOCTYPE html>
@@ -46,19 +68,31 @@ $verificationStatus = $profile['verification_status'] ?? 'pending';
   <!-- Verification Status -->
   <div style="background:#fefce8; border-left:5px solid #eab308; padding:20px; border-radius:12px; margin:30px 0;">
     <h3 style="margin:0 0 8px 0;">Verification Status</h3>
-
     <?php if ($verificationStatus === 'verified'): ?>
-      <p style="color:#16A34A; font-weight:600; margin:0;">✅ Verified — You can now receive referrals and appear publicly.</p>
-
+      <p style="color:#16A34A; font-weight:600; margin:0;">✅ Verified — You can now receive referrals.</p>
     <?php elseif ($verificationStatus === 'rejected'): ?>
-      <p style="color:#DC2626; font-weight:600; margin:0;">❌ Your application was rejected.</p>
-      <p style="margin:10px 0 0 0;">You can reapply with updated documents.</p>
-      <a href="reapply.php" class="btn-primary" style="margin-top:12px; display:inline-block; padding:10px 24px; text-decoration:none;">Reapply Now</a>
-
+      <p style="color:#DC2626; font-weight:600; margin:0;">❌ Rejected. <a href="reapply.php">Reapply here</a></p>
     <?php else: ?>
-      <p style="color:#CA8A04; font-weight:600; margin:0;">⏳ Pending Verification — Your documents are under review.</p>
-      <p style="margin:8px 0 0 0; color:#64748B;">You will be notified once approved.</p>
+      <p style="color:#CA8A04; font-weight:600; margin:0;">⏳ Pending Verification</p>
     <?php endif; ?>
+  </div>
+
+  <!-- Profile Photo -->
+  <div style="background:white; padding:24px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.06); margin-bottom:30px;">
+    <h3 style="margin-bottom:16px;">Profile Photo</h3>
+    
+    <?php if ($photo && file_exists('../' . $photo)): ?>
+      <img src="../<?= $photo ?>" alt="Profile Photo" style="width:120px; height:120px; object-fit:cover; border-radius:50%; border:3px solid #1EB53A; margin-bottom:16px;">
+    <?php else: ?>
+      <div style="width:120px; height:120px; background:#e5e7eb; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:16px; color:#64748B;">
+        No Photo
+      </div>
+    <?php endif; ?>
+
+    <form method="POST" enctype="multipart/form-data">
+      <input type="file" name="profile_photo" accept="image/*" required>
+      <button type="submit" class="btn-primary" style="margin-top:12px; padding:10px 20px;">Upload Photo</button>
+    </form>
   </div>
 
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:20px;">
