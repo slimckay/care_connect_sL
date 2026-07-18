@@ -74,6 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .btn-primary { width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 10px; }
         .error-box { background: #FEE2E2; color: #991B1B; padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; }
+
+        [data-theme="dark"] .auth-card {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
     </style>
 </head>
 <body>
@@ -81,6 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <header>
   <div class="nav-inner">
     <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
+    <div class="nav-actions">
+      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
+    </div>
   </div>
 </header>
 
@@ -113,5 +121,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
+<script src="js/dark-mode.js"></script>
 </body>
 </html>

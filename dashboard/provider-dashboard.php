@@ -59,6 +59,10 @@ $verificationStatus = $profile['verification_status'] ?? 'pending';
 <header>
   <div class="nav-inner">
     <a href="../index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
+    <div class="nav-actions">
+      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
+      <a href="../logout.php" class="btn-ghost">Logout</a>
+    </div>
   </div>
 </header>
 
@@ -110,5 +114,6 @@ $verificationStatus = $profile['verification_status'] ?? 'pending';
   </div>
 </main>
 
+<script src="../js/dark-mode.js"></script>
 </body>
 </html>
