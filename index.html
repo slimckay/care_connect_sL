@@ -83,7 +83,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Hero Section - Full Beautiful Version */
+    /* Hero Section */
     .hero {
       background: 
         linear-gradient(135deg, rgba(30,181,58,0.92) 0%, rgba(255,255,255,0.25) 40%, rgba(0,0,205,0.92) 100%),
@@ -219,12 +219,8 @@
     }
 
     @media (max-width: 768px) {
-      .hero-stats {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .hero-title {
-        font-size: 2.6rem;
-      }
+      .hero-stats { grid-template-columns: repeat(2, 1fr); }
+      .hero-title { font-size: 2.6rem; }
     }
   </style>
 </head>
@@ -263,16 +259,8 @@
 <section class="hero">
   <div class="hero-content">
     <div class="hero-badge">🇸🇱 Sierra Leone's Home-Based Care Platform</div>
-    
-    <h1 class="hero-title">
-      Bringing quality care to every community<br>
-      <span style="color:#E0F2FE;">when it is needed most</span>
-    </h1>
-    
-    <p class="hero-sub">
-      Care Connect makes it easy for families, health workers, and clinics to request referrals, 
-      book urgent home visits, and coordinate local care across Sierra Leone.
-    </p>
+    <h1 class="hero-title">Bringing quality care to every community<br><span style="color:#E0F2FE;">when it is needed most</span></h1>
+    <p class="hero-sub">Care Connect makes it easy for families, health workers, and clinics to request referrals, book urgent home visits, and coordinate local care across Sierra Leone.</p>
 
     <div class="search-box">
       <input type="text" id="heroSearch" placeholder="🔍 Search: referral, home visit, clinic...">
@@ -317,7 +305,6 @@
 <!-- Main Content -->
 <main class="page-content" style="padding-top:20px;">
 
-  <!-- How It Works -->
   <section>
     <div class="section-header">
       <span class="subtitle">✨ Simple Process</span>
@@ -344,7 +331,6 @@
     </div>
   </section>
 
-  <!-- Referral Banner -->
   <section class="site-banner" style="margin-top:50px;">
     <div class="banner-grid">
       <div>
@@ -360,18 +346,46 @@
 
 </main>
 
+<!-- Improved Footer with Clear Legal Links -->
 <footer class="site-footer">
   <div class="footer-grid container">
-    <div><a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a></div>
-    <div><h3>Explore</h3><ul class="footer-links"><li><a href="index.html">Home</a></li><li><a href="pages/doctors.php">Find Care</a></li></ul></div>
-    <div><h3>Contact</h3><p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p></div>
+    <div>
+      <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
+      <p>Home-based care referrals and clinic coordination across Sierra Leone.</p>
+    </div>
+    
+    <div>
+      <h3>Explore</h3>
+      <ul class="footer-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="pages/doctors.php">Find Care</a></li>
+        <li><a href="pages/hospitals.html">Clinics</a></li>
+        <li><a href="pages/referral.html">Referrals</a></li>
+        <li><a href="ai-chat.php">AI Assistant</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h3>Legal</h3>
+      <ul class="footer-links">
+        <li><a href="terms.html">Terms of Service</a></li>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h3>Contact</h3>
+      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
+      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
+    </div>
   </div>
-  <p class="footer-note">&copy; 2026 Care Connect SL. Made with ❤️ in Sierra Leone</p>
+
+  <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved. Made with ❤️ in Sierra Leone</p>
 </footer>
 
 <script src="/js/main.js"></script>
 <script>
-  // JavaScript Typewriter
   function typeWriter(element, text, speed = 105) {
     let i = 0;
     element.innerHTML = '';
