@@ -1,148 +1,132 @@
 <?php
-/**
- * Manage Users - Care Connect SL Admin
- */
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    header('Location: login.php');
+    header('Location: ../login.php');
     exit;
 }
+
 require_once '../db.php';
 
-// Get all users
-$stmt = $conn->query("SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC");
-$users = $stmt->fetchAll();
+$admin_name = $_SESSION['user_name'] ?? ($_SESSION['admin_name'] ?? 'Admin');
+$message = '';
+$error = '';
 
-// Handle user status toggle
-if (isset($_GET['action']) && isset($_GET['id'])) {
+if (isset($_GET['action'], $_GET['id'])) {
     $user_id = (int)$_GET['id'];
     $action = $_GET['action'];
-    
-    if ($action === 'activate' || $action === 'deactivate' || $action === 'ban') {
-        $status = ($action === 'activate') ? 'active' : (($action === 'ban') ? 'banned' : 'inactive');
+
+    if (in_array($action, ['activate', 'deactivate', 'ban'], true)) {
+        $status = $action === 'activate' ? 'active' : ($action === 'ban' ? 'banned' : 'inactive');
         try {
             $stmt = $conn->prepare("UPDATE users SET status = ? WHERE id = ?");
             $stmt->execute([$status, $user_id]);
-            
-            // Log activity
-            $logStmt = $conn->prepare("INSERT INTO activity_logs (user_id, action, details, created_at) VALUES (?, ?, ?, NOW())");
-            $logStmt->execute([$_SESSION['admin_id'], 'user_' . $action, "User ID $user_id: $status"]);
-            
-            header("Location: manage-users.php?message=User updated successfully!");
+            header('Location: manage-users.php?message=' . urlencode('User updated successfully'));
             exit;
         } catch (PDOException $e) {
-            error_log("User update error: " . $e->getMessage());
-            $error = "Failed to update user.";
+            $error = 'Failed to update user.';
         }
     }
 }
+
+if (isset($_GET['message'])) {
+    $message = $_GET['message'];
+}
+
+$users = [];
+try {
+    $users = $conn->query("SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC")->fetchAll();
+} catch (PDOException $e) {
+    $error = 'Could not load users.';
+}
+
+$active = 'users';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Manage Users — Care Connect SL Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../style.css">
-    <link rel="stylesheet" href="admin-styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Users — Care Connect SL Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="admin-styles.css">
 </head>
-<body>
+<body class="admin-body">
 <div class="admin-wrapper">
-    <aside class="admin-sidebar" id="sidebar">
-        <div class="sb-logo">
-            <h1>❤️ Care<em>Connect</em> SL</h1>
-            <div class="sub">Administration Panel</div>
-            <span class="badge">ADMIN</span>
-        </div>
-        <nav class="sb-nav">
-            <div class="sb-section">Overview</div>
-            <a href="admin-dashboard.php" class="sb-item">📊 Dashboard</a>
-            <a href="verify-providers.php" class="sb-item">📋 Verify Providers</a>
-            <div class="sb-section">Manage</div>
-            <a href="manage-users.php" class="sb-item active">👥 Users</a>
-            <a href="manage-referrals.php" class="sb-item">📋 Referrals</a>
-            <div class="sb-section">System</div>
-            <a href="admin-settings.php" class="sb-item">⚙️ Settings</a>
-            <a href="logout.php" class="sb-item" style="color: var(--danger);">🚪 Logout</a>
-        </nav>
-    </aside>
+  <?php include __DIR__ . '/_sidebar.php'; ?>
 
-    <main class="admin-main">
-        <div class="admin-topbar">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
-                <span class="page-title">Manage Users</span>
-            </div>
-            <div class="admin-user">
-                <span class="name"><?php echo $_SESSION['admin_name'] ?? 'Admin'; ?></span>
-                <div class="avatar"><?php echo strtoupper(substr($_SESSION['admin_name'] ?? 'A', 0, 1)); ?></div>
-            </div>
-        </div>
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar-left">
+        <button class="sidebar-toggle" id="sidebarToggle" type="button">☰</button>
+        <span class="page-title">Manage Users</span>
+      </div>
+      <div class="admin-topbar-right">
+        <button onclick="toggleDarkMode()" class="dark-toggle" type="button">🌓</button>
+        <span class="welcome">Welcome, <strong><?= htmlspecialchars($admin_name) ?></strong></span>
+      </div>
+    </div>
 
-        <div class="admin-content">
-            <?php if (isset($_GET['message'])): ?>
-                <div class="form-message success">✅ <?php echo htmlspecialchars($_GET['message']); ?></div>
-            <?php endif; ?>
-            <?php if (isset($error)): ?>
-                <div class="form-message error">❌ <?php echo htmlspecialchars($error); ?></div>
-            <?php endif; ?>
+    <div class="admin-content">
+      <?php if ($message): ?><div class="alert success">✅ <?= htmlspecialchars($message) ?></div><?php endif; ?>
+      <?php if ($error): ?><div class="alert error">⚠️ <?= htmlspecialchars($error) ?></div><?php endif; ?>
 
-            <div class="admin-card">
-                <div class="card-header">
-                    <h2>👥 All Users</h2>
-                    <span style="color: var(--muted); font-size: 0.9rem;">Total: <?php echo count($users); ?></span>
-                </div>
-                <div class="card-body">
-                    <div class="table-wrap">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th>Joined</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($users as $user): ?>
-                                <tr>
-                                    <td><?php echo $user['id']; ?></td>
-                                    <td><?php echo htmlspecialchars($user['name']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                    <td><span class="badge"><?php echo ucfirst($user['role']); ?></span></td>
-                                    <td><span class="badge <?php echo $user['status']; ?>"><?php echo ucfirst($user['status']); ?></span></td>
-                                    <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
-                                    <td>
-                                        <?php if ($user['status'] === 'active'): ?>
-                                            <a href="manage-users.php?action=deactivate&id=<?php echo $user['id']; ?>" class="btn-small" style="background: var(--warning);" onclick="return confirm('Deactivate this user?')">Deactivate</a>
-                                            <a href="manage-users.php?action=ban&id=<?php echo $user['id']; ?>" class="btn-small danger" onclick="return confirm('Ban this user?')">Ban</a>
-                                        <?php elseif ($user['status'] === 'inactive'): ?>
-                                            <a href="manage-users.php?action=activate&id=<?php echo $user['id']; ?>" class="btn-small success" onclick="return confirm('Activate this user?')">Activate</a>
-                                        <?php elseif ($user['status'] === 'banned'): ?>
-                                            <a href="manage-users.php?action=activate&id=<?php echo $user['id']; ?>" class="btn-small success" onclick="return confirm('Unban this user?')">Unban</a>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+      <div class="admin-card">
+        <div class="card-header">
+          <h2>All Users</h2>
+          <span>Total: <?= count($users) ?></span>
         </div>
-    </main>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if (empty($users)): ?>
+                <tr><td colspan="7" class="empty">No users found.</td></tr>
+              <?php endif; ?>
+              <?php foreach ($users as $user): ?>
+                <tr>
+                  <td>#<?= (int)$user['id'] ?></td>
+                  <td><?= htmlspecialchars($user['name']) ?></td>
+                  <td><?= htmlspecialchars($user['email']) ?></td>
+                  <td><span class="badge <?= htmlspecialchars($user['role']) ?>"><?= htmlspecialchars(ucfirst($user['role'])) ?></span></td>
+                  <td><span class="badge <?= htmlspecialchars($user['status']) ?>"><?= htmlspecialchars(ucfirst($user['status'])) ?></span></td>
+                  <td><?= !empty($user['created_at']) ? date('M d, Y', strtotime($user['created_at'])) : '-' ?></td>
+                  <td>
+                    <?php if ($user['status'] === 'active'): ?>
+                      <a class="btn-small warning" href="manage-users.php?action=deactivate&id=<?= (int)$user['id'] ?>" onclick="return confirm('Deactivate this user?')">Deactivate</a>
+                      <a class="btn-small danger" href="manage-users.php?action=ban&id=<?= (int)$user['id'] ?>" onclick="return confirm('Ban this user?')">Ban</a>
+                    <?php else: ?>
+                      <a class="btn-small success" href="manage-users.php?action=activate&id=<?= (int)$user['id'] ?>" onclick="return confirm('Activate this user?')">Activate</a>
+                    <?php endif; ?>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
 
+<script src="../js/dark-mode.js"></script>
 <script>
-document.getElementById('sidebarToggle').addEventListener('click', function() {
-    document.getElementById('sidebar').classList.toggle('open');
-});
+const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebar = document.getElementById('sidebar');
+if (sidebarToggle && sidebar) sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
 </script>
 </body>
 </html>
