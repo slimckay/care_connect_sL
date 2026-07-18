@@ -64,12 +64,12 @@
       width: 9px;
       height: 9px;
       border-radius: 50%;
-      background: #4ADE80;
       opacity: 0.35;
       animation: dotPulse 1.2s ease-in-out infinite;
     }
-    .splash-dots span:nth-child(2) { animation-delay: 0.15s; }
-    .splash-dots span:nth-child(3) { animation-delay: 0.3s; }
+    .splash-dots span:nth-child(1) { background: #1EB53A; }
+    .splash-dots span:nth-child(2) { background: #FFFFFF; animation-delay: 0.15s; }
+    .splash-dots span:nth-child(3) { background: #0000CD; animation-delay: 0.3s; }
     @keyframes dotPulse {
       0%, 100% { opacity: 0.3; transform: scale(0.85); }
       50% { opacity: 1; transform: scale(1.15); }
@@ -383,12 +383,10 @@
 
     function typing() {
       if (i < text.length) {
-        // Keep "Connect" green when fully typed later
         element.insertBefore(document.createTextNode(text.charAt(i)), cursor);
         i++;
         setTimeout(typing, speed);
       } else {
-        // Restyle finished logo with accent on Connect
         element.innerHTML = 'Care<span class="accent">Connect</span> SL';
       }
     }
