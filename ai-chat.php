@@ -43,8 +43,8 @@ if (session_status() === PHP_SESSION_NONE) {
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 70vh;
-            min-height: 560px;
+            height: 75vh;
+            min-height: 600px;
             border: 1px solid #e5e7eb;
         }
 
@@ -214,39 +214,77 @@ if (session_status() === PHP_SESSION_NONE) {
             color: #e2e8f0;
         }
 
-        /* Mobile */
+        /* Mobile - taller chat box */
         @media (max-width: 768px) {
+            .chat-page {
+                margin: 12px auto;
+                padding: 0 10px;
+            }
+
+            .chat-page-title {
+                margin-bottom: 12px;
+            }
+
+            .chat-page-title h1 {
+                font-size: 1.4rem;
+            }
+
+            .chat-page-title p {
+                font-size: 0.9rem;
+            }
+
             .chat-container {
-                height: 65vh;
-                min-height: 480px;
+                height: 78vh;
+                min-height: 560px;
                 border-radius: 14px;
             }
+
             .chat-messages {
                 padding: 16px;
             }
+
             .message {
                 max-width: 95%;
                 font-size: 1rem;
                 padding: 14px 16px;
             }
+
             .chat-input {
                 flex-direction: column;
             }
+
             .chat-input input {
                 width: 100%;
             }
+
             .chat-input button {
                 width: 100%;
                 padding: 14px;
             }
+
             .chat-suggestions {
                 padding: 10px 16px;
             }
+
             .chat-header {
-                padding: 14px 16px;
+                padding: 12px 16px;
             }
+
+            .chat-header .ai-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chat-container {
+                height: 80vh;
+                min-height: 520px;
+            }
+
             .chat-page-title h1 {
-                font-size: 1.5rem;
+                font-size: 1.25rem;
             }
         }
     </style>
