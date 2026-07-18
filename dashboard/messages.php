@@ -1,7 +1,7 @@
 <?php
 /**
- * Live chat UI — history + read receipts
- * Doctors see chats patients start with them (provider_id = doctor).
+ * WhatsApp-style messaging UI — Care Connect SL
+ * Mobile: list OR chat (full screen). Desktop: split view.
  */
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -33,174 +33,377 @@ $startProvider = (int)($_GET['start'] ?? 0);
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#075E54">
   <title>Messages — Care Connect SL</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../style.css">
   <style>
-    body { background:#F4F7FB; }
-    .chat-wrap { max-width:1100px; margin:24px auto 48px; padding:0 14px; }
-    .chat-top { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
-    .chat-top h1 { margin:0; font-size:1.5rem; color:#0F1C3A !important; }
-    .live-pill {
-      display:inline-flex; align-items:center; gap:6px;
-      background:#ECFDF5; color:#065F46; font-size:0.8rem; font-weight:700;
-      padding:6px 10px; border-radius:999px;
+    :root {
+      --wa-teal: #075E54;
+      --wa-teal-dark: #054C44;
+      --wa-green: #25D366;
+      --wa-light: #DCF8C6;
+      --wa-bg: #E5DDD5;
+      --wa-panel: #FFFFFF;
+      --wa-chat-bg: #EFEAE2;
+      --wa-muted: #667781;
+      --wa-border: #E9EDEF;
+      --wa-incoming: #FFFFFF;
+      --wa-outgoing: #D9FDD3;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-    .live-pill .dot {
-      width:8px; height:8px; border-radius:50%; background:#16A34A;
-      animation: pulseDot 1.4s infinite;
-    }
-    @keyframes pulseDot {
-      0% { box-shadow:0 0 0 0 rgba(22,163,74,0.45); }
-      70% { box-shadow:0 0 0 8px rgba(22,163,74,0); }
-      100% { box-shadow:0 0 0 0 rgba(22,163,74,0); }
-    }
-    .back { color:#1EB53A !important; font-weight:600; text-decoration:none; }
-    .role-note { font-size:0.88rem; color:#64748B; margin-top:4px; }
 
-    .chat-layout { display:grid; grid-template-columns:320px 1fr; gap:14px; min-height:70vh; }
-    .panel {
-      background:#fff; border:1px solid #E5E7EB; border-radius:16px;
-      box-shadow:0 6px 18px rgba(15,23,42,0.04); overflow:hidden;
-      display:flex; flex-direction:column;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #111B21;
+      color: #111B21;
+      overflow: hidden;
     }
-    .panel-head { padding:14px 16px; border-bottom:1px solid #E5E7EB; font-weight:700; color:#0F1C3A !important; }
-    .conv-list { overflow:auto; flex:1; }
+
+    .app {
+      height: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      background: var(--wa-panel);
+      position: relative;
+    }
+
+    /* ===== SIDEBAR (chat list) ===== */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--wa-panel);
+      min-width: 0;
+    }
+    .side-header {
+      background: var(--wa-teal);
+      color: #fff;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 60px;
+    }
+    .side-header .avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:0.95rem; flex-shrink:0;
+    }
+    .side-header .titles { flex:1; min-width:0; }
+    .side-header h1 {
+      font-size: 1.1rem; font-weight: 700; color:#fff; line-height:1.2;
+    }
+    .side-header .sub { font-size:0.78rem; opacity:0.85; }
+    .icon-btn {
+      width:40px; height:40px; border:none; border-radius:50%;
+      background:transparent; color:#fff; font-size:1.2rem;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      text-decoration:none; flex-shrink:0;
+    }
+    .icon-btn:active { background: rgba(255,255,255,0.12); }
+
+    .search-wrap {
+      padding: 8px 12px;
+      background: #fff;
+      border-bottom: 1px solid var(--wa-border);
+    }
+    .search-wrap input {
+      width:100%; border:none; background:#F0F2F5; border-radius:8px;
+      padding:10px 14px; font:inherit; font-size:0.92rem; outline:none;
+    }
+
+    .conv-list {
+      flex:1; overflow-y:auto; -webkit-overflow-scrolling: touch;
+      background:#fff;
+    }
     .conv-item {
-      display:block; width:100%; text-align:left; padding:14px 16px; border:0; border-bottom:1px solid #F1F5F9;
-      background:transparent; cursor:pointer; font:inherit;
+      width:100%; border:0; background:transparent; text-align:left;
+      display:flex; gap:12px; align-items:center;
+      padding:12px 14px; cursor:pointer; font:inherit;
+      border-bottom:1px solid #F0F2F5;
     }
-    .conv-item:hover, .conv-item.active { background:#F0FDF4; }
-    .conv-item .name { font-weight:700; color:#0F1C3A !important; margin-bottom:4px; }
-    .conv-item .preview { color:#64748B !important; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .conv-item .time { font-size:0.75rem; color:#94A3B8; margin-top:4px; }
-    .badge-unread {
-      display:inline-block; min-width:20px; padding:2px 7px; border-radius:999px;
-      background:#1EB53A; color:#fff !important; font-size:0.75rem; font-weight:700; margin-left:6px;
+    .conv-item:active, .conv-item.active { background:#F0F2F5; }
+    .conv-avatar {
+      width:52px; height:52px; border-radius:50%; flex-shrink:0;
+      background: linear-gradient(135deg, #075E54, #25D366);
+      color:#fff; display:flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:1.05rem;
+    }
+    .conv-body { flex:1; min-width:0; }
+    .conv-top { display:flex; justify-content:space-between; gap:8px; margin-bottom:4px; }
+    .conv-name { font-weight:600; font-size:1rem; color:#111B21; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .conv-time { font-size:0.75rem; color:var(--wa-muted); flex-shrink:0; }
+    .conv-bottom { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+    .conv-preview { font-size:0.88rem; color:var(--wa-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
+    .unread-pill {
+      background: var(--wa-green); color:#fff; font-size:0.72rem; font-weight:700;
+      min-width:22px; height:22px; border-radius:999px;
+      display:inline-flex; align-items:center; justify-content:center; padding:0 7px;
+    }
+    .empty-list {
+      padding:48px 24px; text-align:center; color:var(--wa-muted);
+    }
+    .empty-list .big { font-size:2.5rem; margin-bottom:10px; }
+
+    .start-panel {
+      border-top:1px solid var(--wa-border);
+      padding:12px;
+      background:#F0F2F5;
+    }
+    .start-panel label { display:block; font-size:0.8rem; font-weight:600; color:#111B21; margin-bottom:6px; }
+    .start-panel select, .start-panel button {
+      width:100%; padding:11px 12px; border-radius:10px; font:inherit; font-size:0.92rem;
+    }
+    .start-panel select { border:1px solid #D1D7DB; background:#fff; margin-bottom:8px; }
+    .start-panel button {
+      border:none; background:var(--wa-teal); color:#fff; font-weight:700; cursor:pointer;
     }
 
-    .thread { display:flex; flex-direction:column; min-height:70vh; }
-    .thread-head {
-      padding:14px 16px; border-bottom:1px solid #E5E7EB; font-weight:700; color:#0F1C3A !important;
-      display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+    /* ===== CHAT PANEL ===== */
+    .chat {
+      display:none;
+      flex-direction:column;
+      height:100%;
+      min-width:0;
+      background: var(--wa-chat-bg);
+      position:relative;
     }
-    .history-meta { font-weight:500; font-size:0.82rem; color:#64748B; }
-    .thread-body {
-      flex:1; overflow:auto; padding:16px; background:#F8FAFC;
-      display:flex; flex-direction:column; gap:10px;
+    .chat.open { display:flex; }
+
+    .chat-header {
+      background: var(--wa-teal);
+      color:#fff;
+      padding:10px 12px;
+      display:flex; align-items:center; gap:10px;
+      min-height:60px;
+      z-index:2;
     }
+    .chat-header .back-btn {
+      width:40px; height:40px; border:none; background:transparent; color:#fff;
+      font-size:1.4rem; cursor:pointer; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .chat-header .back-btn:active { background:rgba(255,255,255,0.12); }
+    .chat-header .avatar {
+      width:40px; height:40px; border-radius:50%;
+      background:rgba(255,255,255,0.22);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; flex-shrink:0;
+    }
+    .chat-header .info { flex:1; min-width:0; }
+    .chat-header .info .name {
+      font-weight:600; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .chat-header .info .status {
+      font-size:0.78rem; opacity:0.9;
+    }
+
+    .chat-body {
+      flex:1;
+      overflow-y:auto;
+      -webkit-overflow-scrolling: touch;
+      padding:12px 10px 8px;
+      background-color: #EFEAE2;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(7,94,84,0.04) 0, transparent 40%),
+        radial-gradient(circle at 80% 60%, rgba(37,211,102,0.05) 0, transparent 35%);
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
     .day-sep {
-      align-self:center; font-size:0.75rem; font-weight:600; color:#64748B;
-      background:#E2E8F0; padding:4px 12px; border-radius:999px; margin:6px 0;
+      align-self:center;
+      background: rgba(255,255,255,0.92);
+      color:#54656F;
+      font-size:0.75rem;
+      font-weight:600;
+      padding:5px 12px;
+      border-radius:8px;
+      margin:8px 0;
+      box-shadow:0 1px 1px rgba(0,0,0,0.06);
     }
-    .bubble { max-width:78%; padding:10px 14px; border-radius:14px; line-height:1.45; font-size:0.95rem; }
-    .bubble.me {
-      align-self:flex-end; background:linear-gradient(135deg,#1EB53A,#15803D); color:#fff !important;
-      border-bottom-right-radius:4px;
-    }
-    .bubble.them {
-      align-self:flex-start; background:#fff; border:1px solid #E5E7EB; color:#0F172A !important;
-      border-bottom-left-radius:4px;
-    }
-    .bubble .meta { font-size:0.72rem; opacity:0.9; margin-top:4px; display:flex; gap:8px; align-items:center; justify-content:flex-end; }
-    .bubble.them .meta { justify-content:flex-start; }
-    .receipt { font-size:0.72rem; letter-spacing:0.02em; }
-    .receipt.sent { opacity:0.85; }
-    .receipt.read { color:#BBF7D0; font-weight:700; }
-    .bubble.them .receipt.read { color:#15803D; }
-    .bubble.new-in { animation: popIn 0.2s ease; }
-    @keyframes popIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 
-    .thread-form { display:flex; gap:8px; padding:12px; border-top:1px solid #E5E7EB; background:#fff; }
-    .thread-form input[type="text"] {
-      flex:1; border:1.5px solid #E5E7EB; border-radius:999px; padding:12px 16px; font:inherit;
+    .row {
+      display:flex;
+      width:100%;
+      margin:2px 0;
     }
-    .thread-form button {
-      border:none; border-radius:999px; padding:12px 18px; font-weight:700; cursor:pointer;
-      background:linear-gradient(135deg,#1EB53A,#15803D); color:#fff;
+    .row.me { justify-content:flex-end; }
+    .row.them { justify-content:flex-start; }
+
+    .bubble {
+      max-width: min(82%, 480px);
+      padding:7px 10px 5px;
+      border-radius:10px;
+      font-size:0.95rem;
+      line-height:1.4;
+      position:relative;
+      box-shadow: 0 1px 0.5px rgba(0,0,0,0.08);
+      word-wrap:break-word;
+      white-space:pre-wrap;
     }
-    .thread-form button:disabled { opacity:0.6; cursor:not-allowed; }
-    .empty { padding:28px; text-align:center; color:#64748B !important; }
+    .row.them .bubble {
+      background: var(--wa-incoming);
+      border-top-left-radius: 0;
+      color:#111B21;
+    }
+    .row.me .bubble {
+      background: var(--wa-outgoing);
+      border-top-right-radius: 0;
+      color:#111B21;
+    }
+    .bubble .meta {
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      gap:5px;
+      margin-top:3px;
+      font-size:0.7rem;
+      color:#667781;
+      line-height:1;
+    }
+    .receipt { font-size:0.85rem; letter-spacing:-1px; }
+    .receipt.sent { color:#667781; }
+    .receipt.read { color:#53BDEB; }
 
-    .start-box { padding:14px 16px; border-top:1px solid #E5E7EB; }
-    .start-box select, .start-box button { width:100%; margin-top:8px; padding:10px 12px; border-radius:10px; font:inherit; }
-    .start-box select { border:1.5px solid #E5E7EB; background:#fff; }
-    .start-box button { border:none; background:#0F1C3A; color:#fff; font-weight:600; cursor:pointer; }
+    .chat-input-bar {
+      display:flex;
+      align-items:flex-end;
+      gap:8px;
+      padding:8px 10px calc(8px + var(--safe-bottom));
+      background:#F0F2F5;
+      border-top:1px solid #E9EDEF;
+    }
+    .chat-input-bar form {
+      display:flex;
+      flex:1;
+      gap:8px;
+      align-items:flex-end;
+    }
+    .chat-input-bar input[type="text"] {
+      flex:1;
+      border:none;
+      background:#fff;
+      border-radius:24px;
+      padding:12px 16px;
+      font:inherit;
+      font-size:0.98rem;
+      outline:none;
+      max-height:120px;
+    }
+    .send-btn {
+      width:48px; height:48px; border-radius:50%; border:none;
+      background:var(--wa-teal); color:#fff; font-size:1.25rem;
+      cursor:pointer; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .send-btn:disabled { opacity:0.55; }
+    .send-btn:active { transform:scale(0.96); }
 
-    [data-theme="dark"] body { background:#0f172a; }
-    [data-theme="dark"] .panel { background:#1e293b; border-color:#334155; }
-    [data-theme="dark"] .panel-head, [data-theme="dark"] .thread-head, [data-theme="dark"] .conv-item .name, [data-theme="dark"] .chat-top h1 { color:#F8FAFC !important; }
-    [data-theme="dark"] .thread-body { background:#0f172a; }
-    [data-theme="dark"] .bubble.them { background:#1e293b; border-color:#334155; color:#E2E8F0 !important; }
-    [data-theme="dark"] .thread-form { background:#1e293b; border-color:#334155; }
-    [data-theme="dark"] .thread-form input[type="text"], [data-theme="dark"] .start-box select { background:#0f172a; border-color:#334155; color:#E2E8F0; }
-    [data-theme="dark"] .day-sep { background:#334155; color:#E2E8F0; }
+    .placeholder {
+      display:none;
+      height:100%;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:10px;
+      background:#F0F2F5;
+      color:#667781;
+      text-align:center;
+      padding:24px;
+    }
+    .placeholder .icon { font-size:3rem; }
+    .placeholder h2 { color:#111B21; font-size:1.2rem; }
 
-    @media (max-width:800px) {
-      .chat-layout { grid-template-columns:1fr; }
-      .panel.list-panel { max-height:260px; }
-      .thread { min-height:55vh; }
+    /* Desktop split */
+    @media (min-width: 860px) {
+      .app { grid-template-columns: 380px 1fr; }
+      .sidebar { border-right:1px solid var(--wa-border); }
+      .chat { display:none; }
+      .chat.open { display:flex; }
+      .placeholder.show { display:flex; }
+      .chat-header .back-btn { display:none; }
+    }
+
+    /* Mobile: only one panel visible */
+    @media (max-width: 859px) {
+      .app.chat-mode .sidebar { display:none; }
+      .app.chat-mode .chat { display:flex; }
+      .app.list-mode .sidebar { display:flex; }
+      .app.list-mode .chat { display:none; }
+      .placeholder { display:none !important; }
     }
   </style>
 </head>
 <body>
-<header>
-  <div class="nav-inner">
-    <a href="../index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
-    <div class="nav-actions">
-      <button onclick="toggleDarkMode()" class="dark-toggle" type="button">🌓</button>
-      <a href="<?= htmlspecialchars($backLink) ?>" class="btn-ghost">Dashboard</a>
-      <a href="../logout.php" class="btn-ghost btn-logout">Log out</a>
+<div class="app list-mode" id="app">
+  <!-- LIST -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-header">
+      <a class="icon-btn" href="<?= htmlspecialchars($backLink) ?>" title="Back to dashboard">←</a>
+      <div class="avatar"><?= htmlspecialchars(strtoupper(substr(preg_replace('/\s+/', '', $userName), 0, 2))) ?></div>
+      <div class="titles">
+        <h1>Messages</h1>
+        <div class="sub"><?= $role === 'patient' ? 'Your doctors & clinics' : 'Patient chats' ?></div>
+      </div>
+      <button class="icon-btn" type="button" onclick="location.reload()" title="Refresh">⟳</button>
     </div>
+
+    <div class="search-wrap">
+      <input type="search" id="searchInput" placeholder="Search chats..." autocomplete="off">
+    </div>
+
+    <div class="conv-list" id="convList">
+      <div class="empty-list"><div class="big">💬</div>Loading chats...</div>
+    </div>
+
+    <?php if ($role === 'patient'): ?>
+    <div class="start-panel">
+      <label for="providerSelect">Start new chat</label>
+      <select id="providerSelect"><option value="">Choose doctor / clinic...</option></select>
+      <button type="button" id="startChatBtn">Start chat</button>
+    </div>
+    <?php endif; ?>
+  </aside>
+
+  <!-- EMPTY STATE (desktop) -->
+  <div class="placeholder show" id="placeholder">
+    <div class="icon">💚</div>
+    <h2>Care Connect Messages</h2>
+    <p>Select a chat to view your message history.<br>Works like WhatsApp — simple and clear.</p>
   </div>
-</header>
 
-<main class="chat-wrap">
-  <div class="chat-top">
-    <div>
-      <a class="back" href="<?= htmlspecialchars($backLink) ?>">← Back</a>
-      <h1>💬 Messages</h1>
-      <div class="role-note">
-        <?php if ($role === 'patient'): ?>
-          Chat with doctors. Full history and read receipts included.
-        <?php else: ?>
-          Patient chats appear here when they message you. Unread counts show new messages.
-        <?php endif; ?>
+  <!-- CHAT -->
+  <section class="chat" id="chatPanel">
+    <div class="chat-header">
+      <button type="button" class="back-btn" id="backToList" aria-label="Back to chats">←</button>
+      <div class="avatar" id="chatAvatar">?</div>
+      <div class="info">
+        <div class="name" id="chatName">Chat</div>
+        <div class="status" id="chatStatus">tap to view history</div>
       </div>
-    </div>
-    <div class="live-pill"><span class="dot"></span> Live</div>
-  </div>
-
-  <div class="chat-layout">
-    <div class="panel list-panel">
-      <div class="panel-head">Message history</div>
-      <div class="conv-list" id="convList"><div class="empty">Loading...</div></div>
-      <?php if ($role === 'patient'): ?>
-      <div class="start-box" id="startBox">
-        <strong style="color:#0F1C3A;">Start chat with a provider</strong>
-        <select id="providerSelect"><option value="">Loading providers...</option></select>
-        <button type="button" id="startChatBtn">Start Chat</button>
-      </div>
-      <?php endif; ?>
+      <a class="icon-btn" href="<?= htmlspecialchars($backLink) ?>" title="Dashboard">⌂</a>
     </div>
 
-    <div class="panel thread">
-      <div class="thread-head">
-        <span id="threadHead">Select a conversation</span>
-        <span class="history-meta" id="historyMeta"></span>
-      </div>
-      <div class="thread-body" id="threadBody"><div class="empty">Choose a chat to view full message history.</div></div>
-      <form class="thread-form" id="sendForm" style="display:none;">
-        <input type="text" id="messageInput" placeholder="Type your message..." maxlength="2000" autocomplete="off" required>
-        <button type="submit" id="sendBtn">Send</button>
+    <div class="chat-body" id="threadBody"></div>
+
+    <div class="chat-input-bar">
+      <form id="sendForm" autocomplete="off">
+        <input type="text" id="messageInput" placeholder="Type a message" maxlength="2000" enterkeyhint="send">
+        <button type="submit" class="send-btn" id="sendBtn" aria-label="Send">➤</button>
       </form>
     </div>
-  </div>
-</main>
+  </section>
+</div>
 
-<script src="../js/dark-mode.js"></script>
-<script src="../js/mobile-logout.js"></script>
 <script>
 (function () {
   const ME = <?= (int)$userId ?>;
@@ -214,19 +417,32 @@ $startProvider = (int)($_GET['start'] ?? 0);
   let pollTimer = null;
   let knownIds = new Set();
   let lastDayKey = '';
+  let allConvs = [];
 
+  const app = document.getElementById('app');
   const convList = document.getElementById('convList');
   const threadBody = document.getElementById('threadBody');
-  const threadHead = document.getElementById('threadHead');
-  const historyMeta = document.getElementById('historyMeta');
+  const chatPanel = document.getElementById('chatPanel');
+  const placeholder = document.getElementById('placeholder');
+  const chatName = document.getElementById('chatName');
+  const chatStatus = document.getElementById('chatStatus');
+  const chatAvatar = document.getElementById('chatAvatar');
   const sendForm = document.getElementById('sendForm');
   const messageInput = document.getElementById('messageInput');
   const sendBtn = document.getElementById('sendBtn');
+  const searchInput = document.getElementById('searchInput');
 
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
     })[c]);
+  }
+
+  function initials(name) {
+    const parts = String(name || '?').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
   function parseDate(ts) {
@@ -237,34 +453,40 @@ $startProvider = (int)($_GET['start'] ?? 0);
 
   function fmtTime(ts) {
     const d = parseDate(ts);
-    if (!d) return ts || '';
-    return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    if (!d) return '';
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function fmtListTime(ts) {
+    const d = parseDate(ts);
+    if (!d) return '';
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) return fmtTime(ts);
+    const y = new Date(); y.setDate(now.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
   }
 
   function dayKey(ts) {
     const d = parseDate(ts);
-    if (!d) return '';
-    return d.toDateString();
+    return d ? d.toDateString() : '';
   }
 
   function dayLabel(ts) {
     const d = parseDate(ts);
     if (!d) return '';
     const today = new Date();
-    const yday = new Date();
-    yday.setDate(today.getDate() - 1);
+    const yday = new Date(); yday.setDate(today.getDate() - 1);
     if (d.toDateString() === today.toDateString()) return 'Today';
     if (d.toDateString() === yday.toDateString()) return 'Yesterday';
-    return d.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+    return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   function receiptHtml(m, mine) {
     if (!mine) return '';
     const read = parseInt(m.is_read, 10) === 1;
-    if (read) {
-      return '<span class="receipt read" title="Read' + (m.read_at ? ' · ' + fmtTime(m.read_at) : '') + '">✓✓ Seen</span>';
-    }
-    return '<span class="receipt sent" title="Delivered">✓ Sent</span>';
+    if (read) return '<span class="receipt read" title="Seen">✓✓</span>';
+    return '<span class="receipt sent" title="Sent">✓</span>';
   }
 
   async function api(action, opts = {}) {
@@ -284,20 +506,52 @@ $startProvider = (int)($_GET['start'] ?? 0);
     return res.json();
   }
 
+  function showList() {
+    app.classList.remove('chat-mode');
+    app.classList.add('list-mode');
+    chatPanel.classList.remove('open');
+    if (placeholder) placeholder.classList.add('show');
+  }
+
+  function showChat() {
+    app.classList.remove('list-mode');
+    app.classList.add('chat-mode');
+    chatPanel.classList.add('open');
+    if (placeholder) placeholder.classList.remove('show');
+  }
+
   function renderConversations(list) {
-    if (!list || !list.length) {
-      convList.innerHTML = ROLE === 'doctor' || ROLE === 'hospital'
-        ? '<div class="empty">No patient chats yet. When a patient messages you, it will show here.</div>'
-        : '<div class="empty">No chats yet. Start one below or from a doctor profile.</div>';
+    allConvs = list || [];
+    const q = (searchInput.value || '').trim().toLowerCase();
+    const filtered = q
+      ? allConvs.filter(c => String(c.other_name || '').toLowerCase().includes(q) || String(c.last_message || '').toLowerCase().includes(q))
+      : allConvs;
+
+    if (!filtered.length) {
+      convList.innerHTML = '<div class="empty-list"><div class="big">💬</div>' +
+        (ROLE === 'patient'
+          ? 'No chats yet. Start one below or message a doctor from Find Care.'
+          : 'No patient messages yet. When a patient messages you, it shows here.') +
+        '</div>';
       return;
     }
-    convList.innerHTML = list.map(c => {
+
+    convList.innerHTML = filtered.map(c => {
       const unread = parseInt(c.unread || 0, 10);
       const t = c.last_message_time || c.last_message_at || '';
+      const name = c.other_name || 'User';
       return `<button type="button" class="conv-item ${activeId === parseInt(c.id,10) ? 'active' : ''}" data-id="${c.id}">
-        <div class="name">${esc(c.other_name || 'User')}${unread ? `<span class="badge-unread">${unread}</span>` : ''}</div>
-        <div class="preview">${esc(c.last_message || 'No messages yet')}</div>
-        <div class="time">${esc(fmtTime(t))}</div>
+        <div class="conv-avatar">${esc(initials(name))}</div>
+        <div class="conv-body">
+          <div class="conv-top">
+            <div class="conv-name">${esc(name)}</div>
+            <div class="conv-time">${esc(fmtListTime(t))}</div>
+          </div>
+          <div class="conv-bottom">
+            <div class="conv-preview">${esc(c.last_message || 'Tap to open chat')}</div>
+            ${unread ? '<span class="unread-pill">' + unread + '</span>' : ''}
+          </div>
+        </div>
       </button>`;
     }).join('');
 
@@ -319,10 +573,9 @@ $startProvider = (int)($_GET['start'] ?? 0);
   function appendBubble(m, animate) {
     const id = parseInt(m.id, 10);
     if (knownIds.has(id)) {
-      // Update receipt only
-      const existing = threadBody.querySelector('.bubble[data-id="' + id + '"] .receipt');
+      const existing = threadBody.querySelector('.row[data-id="' + id + '"] .receipt');
       if (existing && parseInt(m.sender_id, 10) === ME) {
-        const wrap = document.createElement('div');
+        const wrap = document.createElement('span');
         wrap.innerHTML = receiptHtml(m, true);
         if (wrap.firstChild) existing.replaceWith(wrap.firstChild);
       }
@@ -330,35 +583,28 @@ $startProvider = (int)($_GET['start'] ?? 0);
     }
     knownIds.add(id);
     lastMsgId = Math.max(lastMsgId, id);
-
     maybeDaySep(m.created_at);
 
     const mine = parseInt(m.sender_id, 10) === ME;
-    const div = document.createElement('div');
-    div.className = 'bubble ' + (mine ? 'me' : 'them') + (animate ? ' new-in' : '');
-    div.dataset.id = id;
-    div.innerHTML =
-      esc(m.message).replace(/\n/g, '<br>') +
-      '<div class="meta">' +
-        '<span>' + (mine ? 'You' : esc(m.sender_name || '')) + ' · ' + fmtTime(m.created_at) + '</span>' +
-        receiptHtml(m, mine) +
+    const row = document.createElement('div');
+    row.className = 'row ' + (mine ? 'me' : 'them');
+    row.dataset.id = id;
+    row.innerHTML = '<div class="bubble">' +
+      esc(m.message) +
+      '<div class="meta"><span>' + fmtTime(m.created_at) + '</span>' + receiptHtml(m, mine) + '</div>' +
       '</div>';
-
-    const empty = threadBody.querySelector('.empty');
-    if (empty) empty.remove();
-    threadBody.appendChild(div);
+    threadBody.appendChild(row);
     threadBody.scrollTop = threadBody.scrollHeight;
   }
 
   function applyReceipts(receipts) {
     (receipts || []).forEach(r => {
-      const el = threadBody.querySelector('.bubble[data-id="' + r.id + '"] .receipt');
+      if (parseInt(r.is_read, 10) !== 1) return;
+      const el = threadBody.querySelector('.row[data-id="' + r.id + '"] .receipt');
       if (!el) return;
-      if (parseInt(r.is_read, 10) === 1) {
-        el.className = 'receipt read';
-        el.textContent = '✓✓ Seen';
-        el.title = 'Read' + (r.read_at ? ' · ' + fmtTime(r.read_at) : '');
-      }
+      el.className = 'receipt read';
+      el.textContent = '✓✓';
+      el.title = 'Seen';
     });
   }
 
@@ -372,27 +618,24 @@ $startProvider = (int)($_GET['start'] ?? 0);
     lastMsgId = 0;
     knownIds = new Set();
     lastDayKey = '';
-    threadBody.innerHTML = '<div class="empty">Loading history...</div>';
-    sendForm.style.display = 'flex';
-    historyMeta.textContent = '';
-
-    convList.querySelectorAll('.conv-item').forEach(el => {
-      el.classList.toggle('active', parseInt(el.dataset.id, 10) === id);
-    });
+    threadBody.innerHTML = '';
+    showChat();
 
     const data = await api('messages', { params: { conversation_id: id } });
     if (!data.ok) {
-      threadBody.innerHTML = '<div class="empty">Could not load chat history.</div>';
+      threadBody.innerHTML = '<div class="day-sep">Could not load messages</div>';
       return;
     }
 
-    threadHead.textContent = (data.other_name || 'Chat') + ' · ' + String(data.other_role || '').replace(/^./, c => c.toUpperCase());
-    threadBody.innerHTML = '';
-    lastDayKey = '';
+    const name = data.other_name || 'Chat';
+    chatName.textContent = name;
+    chatAvatar.textContent = initials(name);
+    const roleLabel = String(data.other_role || '').replace(/^./, c => c.toUpperCase());
+    chatStatus.textContent = roleLabel ? roleLabel + ' · Care Connect' : 'Care Connect chat';
+
     const msgs = data.messages || [];
-    historyMeta.textContent = msgs.length ? (msgs.length + ' message' + (msgs.length === 1 ? '' : 's') + ' in history') : '';
     if (!msgs.length) {
-      threadBody.innerHTML = '<div class="empty">No messages yet. Say hello 👋</div>';
+      threadBody.innerHTML = '<div class="day-sep">No messages yet. Say hello 👋</div>';
     } else {
       msgs.forEach(m => appendBubble(m, false));
     }
@@ -408,18 +651,13 @@ $startProvider = (int)($_GET['start'] ?? 0);
   }
 
   async function startWithProvider(pid) {
-    if (!pid) return;
-    if (ROLE !== 'patient') {
-      alert('Only patients start chats from a doctor profile.');
-      return;
-    }
-    threadBody.innerHTML = '<div class="empty">Opening chat with provider...</div>';
+    if (!pid || ROLE !== 'patient') return;
     const data = await api('start', { method: 'POST', body: { provider_id: pid } });
     if (data.ok) {
       await loadConversations();
       openConversation(parseInt(data.conversation_id, 10));
     } else {
-      threadBody.innerHTML = '<div class="empty">' + esc(data.error || 'Could not start chat') + '</div>';
+      alert(data.error || 'Could not start chat');
     }
   }
 
@@ -430,14 +668,9 @@ $startProvider = (int)($_GET['start'] ?? 0);
         params: { conversation_id: activeId, after_id: lastMsgId }
       });
       if (!data.ok) return;
-      const msgs = data.messages || [];
-      if (msgs.length) {
-        msgs.forEach(m => appendBubble(m, true));
-        historyMeta.textContent = knownIds.size + ' message' + (knownIds.size === 1 ? '' : 's') + ' in history';
-        loadConversations();
-      }
-      // Update Seen receipts on your own older messages
+      (data.messages || []).forEach(m => appendBubble(m, true));
       applyReceipts(data.receipts || []);
+      if ((data.messages || []).length) loadConversations();
     } catch (e) {}
   }
 
@@ -446,7 +679,6 @@ $startProvider = (int)($_GET['start'] ?? 0);
     if (!activeId) return;
     const text = messageInput.value.trim();
     if (!text) return;
-
     sendBtn.disabled = true;
     messageInput.value = '';
     try {
@@ -456,7 +688,6 @@ $startProvider = (int)($_GET['start'] ?? 0);
       });
       if (data.ok && data.message) {
         appendBubble(data.message, true);
-        historyMeta.textContent = knownIds.size + ' message' + (knownIds.size === 1 ? '' : 's') + ' in history';
         loadConversations();
       } else {
         messageInput.value = text;
@@ -471,6 +702,20 @@ $startProvider = (int)($_GET['start'] ?? 0);
     }
   });
 
+  document.getElementById('backToList').addEventListener('click', function () {
+    activeId = 0;
+    if (pollTimer) clearInterval(pollTimer);
+    showList();
+    loadConversations();
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, '', 'messages.php');
+    }
+  });
+
+  searchInput.addEventListener('input', function () {
+    renderConversations(allConvs);
+  });
+
   const startBtn = document.getElementById('startChatBtn');
   const providerSelect = document.getElementById('providerSelect');
   if (startBtn && providerSelect) {
@@ -481,7 +726,6 @@ $startProvider = (int)($_GET['start'] ?? 0);
         list.map(p => `<option value="${p.id}">${esc(p.name)}${p.specialty ? ' — ' + esc(p.specialty) : ''}</option>`).join('');
       if (startProvider > 0) providerSelect.value = String(startProvider);
     });
-
     startBtn.addEventListener('click', async () => {
       const pid = parseInt(providerSelect.value, 10);
       if (!pid) return alert('Choose a provider first');
@@ -491,6 +735,8 @@ $startProvider = (int)($_GET['start'] ?? 0);
     });
   }
 
+  // Init
+  showList();
   loadConversations().then(async () => {
     if (initialConv > 0) openConversation(initialConv);
     else if (startProvider > 0) await startWithProvider(startProvider);
