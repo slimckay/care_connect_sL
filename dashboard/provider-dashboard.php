@@ -19,33 +19,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profile_photo'])) {
     }
 
     if ($_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
-        $ext = pathinfo($_FILES['profile_photo']['name'], PATHINFO_EXTENSION);
-        $filename = 'provider_' . $user_id . '_' . time() . '.' . $ext;
-        $destination = $uploadDir . $filename;
+        $ext = strtolower(pathinfo($_FILES['profile_photo']['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+        if (in_array($ext, $allowed)) {
+            $filename = 'provider_' . $user_id . '_' . time() . '.' . $ext;
+            $destination = $uploadDir . $filename;
 
-        if (move_uploaded_file($_FILES['profile_photo']['tmp_name'], $destination)) {
-            $photoPath = 'uploads/profile/' . $filename;
-            $conn->prepare("UPDATE provider_profiles SET profile_photo = ? WHERE user_id = ?")
-                 ->execute([$photoPath, $user_id]);
+            if (move_uploaded_file($_FILES['profile_photo']['tmp_name'], $destination)) {
+                $photoPath = 'uploads/profile/' . $filename;
+                $conn->prepare("UPDATE provider_profiles SET profile_photo = ? WHERE user_id = ?")
+                     ->execute([$photoPath, $user_id]);
+            }
         }
     }
 }
 
-$stmt = $conn->prepare("
-    SELECT p.*, u.name, u.email 
-    FROM provider_profiles p 
-    JOIN users u ON p.user_id = u.id 
-    WHERE p.user_id = ?
-");
-$stmt->execute([$user_id]);
-$profile = $stmt->fetch();
+$profile = null;
+try {
+    $stmt = $conn->prepare("
+        SELECT p.*, u.name, u.email, u.role
+        FROM provider_profiles p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.user_id = ?
+        LIMIT 1
+    ");
+    $stmt->execute([$user_id]);
+    $profile = $stmt->fetch();
+} catch (Exception $e) {
+    $profile = null;
+}
 
-$photo = $profile['profile_photo'] ?? '';
-$verificationStatus = $profile['verification_status'] ?? 'pending';
-$name = $profile['name'] ?? ($_SESSION['user_name'] ?? 'Provider');
-$email = $profile['email'] ?? '';
-$specialty = $profile['specialty'] ?? 'Not set';
-$experience = $profile['experience_years'] ?? 0;
+if (!$profile) {
+    try {
+        $u = $conn->prepare("SELECT name, email, role FROM users WHERE id = ? LIMIT 1");
+        $u->execute([$user_id]);
+        $user = $u->fetch();
+    } catch (Exception $e) {
+        $user = null;
+    }
+    $name = $user['name'] ?? ($_SESSION['user_name'] ?? 'Provider');
+    $email = $user['email'] ?? '';
+    $role = $user['role'] ?? 'doctor';
+    $photo = '';
+    $verificationStatus = 'pending';
+    $specialty = 'Not set';
+    $experience = 0;
+} else {
+    $name = $profile['name'] ?? 'Provider';
+    $email = $profile['email'] ?? '';
+    $role = $profile['role'] ?? 'doctor';
+    $photo = $profile['profile_photo'] ?? '';
+    $verificationStatus = $profile['verification_status'] ?? 'pending';
+    $specialty = $profile['specialty'] ?? 'Not set';
+    $experience = $profile['experience_years'] ?? 0;
+}
+
+$statusLabel = ucfirst($verificationStatus);
+$statusColor = match ($verificationStatus) {
+    'verified' => '#16A34A',
+    'rejected' => '#DC2626',
+    default => '#CA8A04',
+};
+$statusBg = match ($verificationStatus) {
+    'verified' => '#F0FDF4',
+    'rejected' => '#FEF2F2',
+    default => '#FFFBEB',
+};
+$statusBorder = match ($verificationStatus) {
+    'verified' => '#16A34A',
+    'rejected' => '#DC2626',
+    default => '#EAB308',
+};
+$statusIcon = match ($verificationStatus) {
+    'verified' => '✅',
+    'rejected' => '❌',
+    default => '⏳',
+};
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,105 +102,164 @@ $experience = $profile['experience_years'] ?? 0;
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Provider Dashboard — Care Connect SL</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../style.css">
   <style>
-    .dash-wrap { max-width: 1100px; margin: 30px auto; padding: 0 20px; color: #1F2937; }
-    .dash-wrap h1 { color: #0F1C3A !important; margin-bottom: 8px; }
-    .dash-subtitle { color: #64748B !important; margin-bottom: 28px; }
+    body { background: #F8FAFC; }
+    .pd-wrap { max-width: 1080px; margin: 28px auto; padding: 0 16px 40px; }
 
-    .status-card {
-      border-radius: 14px;
-      padding: 20px 22px;
-      margin-bottom: 24px;
-      border-left: 5px solid #eab308;
-      background: #fefce8;
-    }
-    .status-card h3 { margin: 0 0 8px 0; color: #0F1C3A !important; }
-    .status-card p { margin: 0; color: #1F2937 !important; }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1.1fr 1fr;
-      gap: 20px;
-      margin-bottom: 24px;
-    }
-
-    .panel {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
-    }
-    .panel h3 {
-      margin: 0 0 16px 0;
-      color: #0F1C3A !important;
-      font-size: 1.1rem;
-    }
-    .panel p { color: #475569 !important; }
-
-    .info-row {
+    .pd-header {
       display: flex;
       justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #f1f5f9;
-      color: #1F2937 !important;
-    }
-    .info-row span:first-child { color: #64748B !important; }
-
-    .action-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      align-items: flex-start;
       gap: 16px;
+      margin-bottom: 24px;
     }
-    .action-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 22px;
+    .pd-header h1 {
+      margin: 0 0 6px;
+      font-size: 1.7rem;
+      color: #0F1C3A !important;
     }
-    .action-card h3 { color: #0F1C3A !important; margin: 0 0 8px 0; }
-    .action-card p { color: #64748B !important; margin: 0 0 14px 0; }
+    .pd-header p {
+      margin: 0;
+      color: #64748B !important;
+    }
 
-    .photo-box {
-      width: 110px;
-      height: 110px;
+    .status-banner {
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      border-left: 5px solid <?= $statusBorder ?>;
+      background: <?= $statusBg ?>;
+    }
+    .status-banner strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #0F1C3A !important;
+    }
+    .status-banner span {
+      color: <?= $statusColor ?> !important;
+      font-weight: 600;
+    }
+
+    .pd-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #E5E7EB;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+    }
+    .card h3 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+      color: #0F1C3A !important;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid #F1F5F9;
+    }
+    .meta-row:last-child { border-bottom: none; }
+    .meta-row .label { color: #64748B !important; }
+    .meta-row .value { color: #0F172A !important; font-weight: 600; text-align: right; }
+
+    .photo-area { text-align: center; }
+    .photo {
+      width: 112px;
+      height: 112px;
       border-radius: 50%;
       object-fit: cover;
       border: 3px solid #1EB53A;
-      margin-bottom: 14px;
+      margin: 0 auto 12px;
+      display: block;
     }
-    .photo-placeholder {
-      width: 110px;
-      height: 110px;
+    .photo-fallback {
+      width: 112px;
+      height: 112px;
       border-radius: 50%;
-      background: #e5e7eb;
+      background: #E2E8F0;
+      color: #64748B !important;
       display: flex;
       align-items: center;
       justify-content: center;
+      margin: 0 auto 12px;
+      font-weight: 600;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .action {
+      background: #fff;
+      border: 1px solid #E5E7EB;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+    }
+    .action h3 {
+      margin: 0 0 8px;
+      color: #0F1C3A !important;
+      font-size: 1rem;
+    }
+    .action p {
+      margin: 0 0 14px;
       color: #64748B !important;
-      margin-bottom: 14px;
+      font-size: 0.92rem;
+      line-height: 1.5;
     }
 
-    [data-theme="dark"] .dash-wrap,
-    [data-theme="dark"] .dash-wrap h1 { color: #f8fafc !important; }
-    [data-theme="dark"] .dash-subtitle { color: #94A3B8 !important; }
-    [data-theme="dark"] .panel,
-    [data-theme="dark"] .action-card {
-      background: #1e293b !important;
-      border-color: #334155 !important;
+    .btn-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
     }
-    [data-theme="dark"] .panel h3,
-    [data-theme="dark"] .action-card h3,
-    [data-theme="dark"] .status-card h3 { color: #f8fafc !important; }
-    [data-theme="dark"] .panel p,
-    [data-theme="dark"] .action-card p,
-    [data-theme="dark"] .info-row { color: #e2e8f0 !important; }
-    [data-theme="dark"] .status-card { background: #422006; }
+    .btn-main {
+      background: linear-gradient(135deg, #1EB53A, #15802A);
+      color: #fff !important;
+    }
+    .btn-outline {
+      border: 2px solid #1EB53A;
+      color: #1EB53A !important;
+      background: transparent;
+    }
 
-    @media (max-width: 768px) {
-      .grid-2 { grid-template-columns: 1fr; }
+    [data-theme="dark"] body { background: #0f172a; }
+    [data-theme="dark"] .pd-header h1,
+    [data-theme="dark"] .card h3,
+    [data-theme="dark"] .action h3,
+    [data-theme="dark"] .status-banner strong { color: #F8FAFC !important; }
+    [data-theme="dark"] .pd-header p,
+    [data-theme="dark"] .action p,
+    [data-theme="dark"] .meta-row .label { color: #94A3B8 !important; }
+    [data-theme="dark"] .card,
+    [data-theme="dark"] .action {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    [data-theme="dark"] .meta-row { border-color: #334155; }
+    [data-theme="dark"] .meta-row .value { color: #E2E8F0 !important; }
+
+    @media (max-width: 900px) {
+      .pd-grid, .actions { grid-template-columns: 1fr; }
+      .pd-header { flex-direction: column; }
     }
   </style>
 </head>
@@ -167,63 +275,66 @@ $experience = $profile['experience_years'] ?? 0;
   </div>
 </header>
 
-<main class="dash-wrap">
-  <h1>Welcome, <?= htmlspecialchars($name) ?></h1>
-  <p class="dash-subtitle">Manage your provider profile, verification, and referrals</p>
+<main class="pd-wrap">
+  <div class="pd-header">
+    <div>
+      <h1>Provider Dashboard</h1>
+      <p>Welcome back, <?= htmlspecialchars($name) ?> · <?= htmlspecialchars(ucfirst($role)) ?></p>
+    </div>
+  </div>
 
-  <div class="status-card">
-    <h3>Verification Status</h3>
+  <div class="status-banner">
+    <strong>Verification Status</strong>
+    <span><?= $statusIcon ?> <?= htmlspecialchars($statusLabel) ?></span>
     <?php if ($verificationStatus === 'verified'): ?>
-      <p style="color:#16A34A !important; font-weight:600;">✅ Verified — You can receive referrals and appear publicly.</p>
+      <p style="margin:8px 0 0; color:#166534 !important;">You can receive referrals and appear on public listings.</p>
     <?php elseif ($verificationStatus === 'rejected'): ?>
-      <p style="color:#DC2626 !important; font-weight:600;">❌ Rejected. <a href="reapply.php" style="color:#1EB53A;">Reapply here</a></p>
+      <p style="margin:8px 0 0; color:#991B1B !important;">Your submission was rejected. Please update documents and reapply.</p>
     <?php else: ?>
-      <p style="color:#CA8A04 !important; font-weight:600;">⏳ Pending Verification — Your documents are under review.</p>
+      <p style="margin:8px 0 0; color:#92400E !important;">Your documents are under review. Public listing stays hidden until verified.</p>
     <?php endif; ?>
   </div>
 
-  <div class="grid-2">
-    <div class="panel">
+  <div class="pd-grid">
+    <div class="card">
       <h3>Profile Overview</h3>
-      <div class="info-row"><span>Name</span><span><?= htmlspecialchars($name) ?></span></div>
-      <div class="info-row"><span>Email</span><span><?= htmlspecialchars($email) ?></span></div>
-      <div class="info-row"><span>Specialty</span><span><?= htmlspecialchars($specialty) ?></span></div>
-      <div class="info-row"><span>Experience</span><span><?= (int)$experience ?> years</span></div>
-      <div class="info-row" style="border-bottom:none;"><span>Status</span><span><?= htmlspecialchars(ucfirst($verificationStatus)) ?></span></div>
+      <div class="meta-row"><span class="label">Full Name</span><span class="value"><?= htmlspecialchars($name) ?></span></div>
+      <div class="meta-row"><span class="label">Email</span><span class="value"><?= htmlspecialchars($email) ?></span></div>
+      <div class="meta-row"><span class="label">Specialty</span><span class="value"><?= htmlspecialchars($specialty) ?></span></div>
+      <div class="meta-row"><span class="label">Experience</span><span class="value"><?= (int)$experience ?> years</span></div>
+      <div class="meta-row"><span class="label">Account Type</span><span class="value"><?= htmlspecialchars(ucfirst($role)) ?></span></div>
     </div>
 
-    <div class="panel">
+    <div class="card photo-area">
       <h3>Profile Photo</h3>
       <?php if ($photo && file_exists('../' . $photo)): ?>
-        <img src="../<?= htmlspecialchars($photo) ?>" alt="Profile Photo" class="photo-box">
+        <img src="../<?= htmlspecialchars($photo) ?>" alt="Profile photo" class="photo">
       <?php else: ?>
-        <div class="photo-placeholder">No Photo</div>
+        <div class="photo-fallback">No Photo</div>
       <?php endif; ?>
 
       <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="profile_photo" accept="image/*" required>
-        <button type="submit" class="btn-primary" style="margin-top:12px; padding:10px 18px;">Upload Photo</button>
+        <input type="file" name="profile_photo" accept="image/*" required style="margin-bottom:12px;">
+        <button type="submit" class="btn-link btn-main" style="border:none; cursor:pointer; width:100%;">Upload Photo</button>
       </form>
     </div>
   </div>
 
-  <div class="action-grid">
-    <div class="action-card">
-      <h3>📋 My Referrals</h3>
-      <p>View and manage incoming patient referrals.</p>
-      <a href="#" class="btn-primary" style="padding:10px 18px; text-decoration:none; display:inline-block;">View Referrals</a>
+  <div class="actions">
+    <div class="action">
+      <h3>📋 Referrals</h3>
+      <p>Review incoming patient referrals and respond quickly.</p>
+      <a href="#" class="btn-link btn-main">View Referrals</a>
     </div>
-
-    <div class="action-card">
+    <div class="action">
       <h3>📄 Documents</h3>
-      <p>Update verification documents if needed.</p>
-      <a href="reapply.php" class="btn-ghost" style="padding:10px 18px; text-decoration:none; display:inline-block;">Manage Documents</a>
+      <p>Upload or update your verification documents.</p>
+      <a href="reapply.php" class="btn-link btn-outline">Manage Documents</a>
     </div>
-
-    <div class="action-card">
-      <h3>🏠 Public Profile</h3>
-      <p>See how you appear after verification.</p>
-      <a href="../pages/doctors.php" class="btn-ghost" style="padding:10px 18px; text-decoration:none; display:inline-block;">Find Care Page</a>
+    <div class="action">
+      <h3>🏥 Public Listing</h3>
+      <p>See the public Find Care page where verified providers appear.</p>
+      <a href="../pages/doctors.php" class="btn-link btn-outline">Open Find Care</a>
     </div>
   </div>
 </main>
