@@ -23,7 +23,21 @@ try {
              ->execute([$user_id]);
     }
 } catch (Exception $e) {
-    // table/columns may vary; continue
+}
+
+// Unread patient messages for this doctor
+$unreadMessages = 0;
+try {
+    $um = $conn->prepare("
+        SELECT COUNT(*) AS c
+        FROM chat_messages m
+        JOIN conversations c ON c.id = m.conversation_id
+        WHERE c.provider_id = ? AND m.sender_id != ? AND m.is_read = 0
+    ");
+    $um->execute([$user_id, $user_id]);
+    $unreadMessages = (int)($um->fetch()['c'] ?? 0);
+} catch (Exception $e) {
+    $unreadMessages = 0;
 }
 
 // Handle profile photo upload
@@ -36,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         $ext = strtolower(pathinfo($_FILES['profile_photo']['name'], PATHINFO_EXTENSION));
         $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-        $maxSize = 5 * 1024 * 1024; // 5MB
+        $maxSize = 5 * 1024 * 1024;
 
         if (!in_array($ext, $allowed)) {
             $error = 'Photo must be JPG, PNG, WEBP, or GIF.';
@@ -63,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Handle profile details update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
     $specialty = trim($_POST['specialty'] ?? '');
     $qualifications = trim($_POST['qualifications'] ?? '');
@@ -92,25 +105,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 WHERE user_id = ?
             ");
             $stmt->execute([
-                $specialty,
-                $qualifications,
-                $experience,
-                $clinic_name,
-                $clinic_address,
-                $clinic_phone,
-                $consultation_fee,
-                $is_accepting,
-                $user_id
+                $specialty, $qualifications, $experience, $clinic_name,
+                $clinic_address, $clinic_phone, $consultation_fee, $is_accepting, $user_id
             ]);
             $message = 'Profile details saved successfully.';
         } catch (Exception $e) {
-            error_log('Provider profile update: ' . $e->getMessage());
             $error = 'Could not save profile. Please try again.';
         }
     }
 }
 
-// Handle verification document upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_docs') {
     $uploadDir = __DIR__ . '/../uploads/verification/';
     if (!is_dir($uploadDir)) {
@@ -138,7 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $error = 'Please upload at least one valid document (JPG, PNG, or PDF, max 8MB each).';
     } else {
         try {
-            // Keep previous docs if any
             $prev = $conn->prepare("SELECT verification_documents FROM provider_profiles WHERE user_id = ?");
             $prev->execute([$user_id]);
             $row = $prev->fetch();
@@ -156,13 +159,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
             $message = 'Documents uploaded. Your verification is now pending review.';
         } catch (Exception $e) {
-            error_log('Doc upload: ' . $e->getMessage());
             $error = 'Could not save documents. Please try again.';
         }
     }
 }
 
-// Load profile
 $profile = null;
 try {
     $stmt = $conn->prepare("
@@ -252,9 +253,46 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
   <style>
     body { background: #F8FAFC; }
     .pd-wrap { max-width: 1080px; margin: 28px auto; padding: 0 16px 48px; }
-    .pd-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; }
+    .pd-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
     .pd-header h1 { margin:0 0 6px; font-size:1.7rem; color:#0F1C3A !important; }
     .pd-header p { margin:0; color:#64748B !important; }
+    .pd-header-actions { display:flex; gap:10px; flex-wrap:wrap; }
+
+    .msg-badge {
+      display:inline-flex; align-items:center; justify-content:center;
+      min-width:22px; height:22px; padding:0 7px; border-radius:999px;
+      background:#DC2626; color:#fff !important; font-size:0.75rem; font-weight:700;
+      margin-left:6px;
+    }
+
+    /* BIG visible messages banner */
+    .messages-banner {
+      display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+      background: linear-gradient(135deg, #0F1C3A 0%, #14532D 100%);
+      color:#fff;
+      border-radius:16px;
+      padding:18px 20px;
+      margin-bottom:20px;
+      box-shadow:0 10px 28px rgba(15,28,58,0.25);
+    }
+    .messages-banner h2 {
+      margin:0 0 6px;
+      font-size:1.2rem;
+      color:#fff !important;
+    }
+    .messages-banner p {
+      margin:0;
+      color:rgba(255,255,255,0.85) !important;
+      font-size:0.95rem;
+    }
+    .messages-banner .btn-msg-big {
+      display:inline-flex; align-items:center; gap:8px;
+      background:#1EB53A; color:#fff !important;
+      font-weight:700; text-decoration:none;
+      padding:12px 20px; border-radius:999px; min-height:48px;
+      white-space:nowrap;
+    }
+    .messages-banner .btn-msg-big:hover { filter:brightness(1.08); }
 
     .alert {
       display:flex; gap:10px; align-items:flex-start;
@@ -324,12 +362,21 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
       border:2px solid #1EB53A; color:#1EB53A !important; background:transparent;
       font-weight:600; font-size:0.92rem; cursor:pointer; text-decoration:none;
     }
-    .btn-main:disabled { opacity:0.7; cursor:not-allowed; }
+    .btn-msg-nav {
+      display:inline-flex; align-items:center; gap:6px;
+      min-height:42px; padding:10px 16px; border-radius:999px;
+      background:#0F1C3A; color:#fff !important; font-weight:700; text-decoration:none;
+    }
 
-    .actions { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:18px; }
+    .actions { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:18px; }
+    @media (min-width: 900px) { .actions { grid-template-columns:repeat(4,1fr); } }
     .action {
       background:#fff; border:1px solid #E5E7EB; border-radius:16px; padding:20px;
       box-shadow:0 6px 18px rgba(15,23,42,0.04);
+    }
+    .action.highlight-msg {
+      border:2px solid #1EB53A;
+      background: #F0FDF4;
     }
     .action h3 { margin:0 0 8px; color:#0F1C3A !important; font-size:1rem; }
     .action p { margin:0 0 14px; color:#64748B !important; font-size:0.92rem; line-height:1.5; }
@@ -345,6 +392,7 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
     [data-theme="dark"] .form-group label { color:#94A3B8 !important; }
     [data-theme="dark"] .card,
     [data-theme="dark"] .action { background:#1e293b; border-color:#334155; }
+    [data-theme="dark"] .action.highlight-msg { background:#052e16; border-color:#1EB53A; }
     [data-theme="dark"] .form-group input,
     [data-theme="dark"] .form-group textarea,
     [data-theme="dark"] .form-group select {
@@ -353,7 +401,7 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
     [data-theme="dark"] .docs-list li { border-color:#334155; color:#e2e8f0; }
 
     @media (max-width: 900px) {
-      .pd-grid, .actions, .form-grid { grid-template-columns:1fr; }
+      .pd-grid, .form-grid { grid-template-columns:1fr; }
       .pd-header { flex-direction:column; }
     }
   </style>
@@ -364,8 +412,11 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
   <div class="nav-inner">
     <a href="../index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
     <div class="nav-actions">
-      <button onclick="toggleDarkMode()" class="dark-toggle">🌓</button>
-      <a href="../logout.php" class="btn-ghost">Logout</a>
+      <button onclick="toggleDarkMode()" class="dark-toggle" type="button">🌓</button>
+      <a href="messages.php" class="btn-msg-nav">
+        💬 Messages<?php if ($unreadMessages > 0): ?><span class="msg-badge"><?= $unreadMessages ?></span><?php endif; ?>
+      </a>
+      <a href="../logout.php" class="btn-ghost btn-logout">Log out</a>
     </div>
   </div>
 </header>
@@ -376,6 +427,28 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
       <h1>Provider Dashboard</h1>
       <p>Welcome back, <?= htmlspecialchars($name) ?> · <?= htmlspecialchars(ucfirst($role)) ?></p>
     </div>
+    <div class="pd-header-actions">
+      <a href="messages.php" class="btn-main">💬 Open Messages<?php if ($unreadMessages > 0): ?> (<?= $unreadMessages ?>)<?php endif; ?></a>
+      <a href="provider-referrals.php" class="btn-outline">📋 Referrals</a>
+    </div>
+  </div>
+
+  <!-- Very visible messaging section for doctors -->
+  <div class="messages-banner">
+    <div>
+      <h2>💬 Patient Messages</h2>
+      <p>
+        <?php if ($unreadMessages > 0): ?>
+          You have <strong><?= $unreadMessages ?> unread</strong> patient message<?= $unreadMessages === 1 ? '' : 's' ?>. Reply in Messages.
+        <?php else: ?>
+          When a patient messages you from Find Care or their dashboard, their chat appears here.
+        <?php endif; ?>
+      </p>
+    </div>
+    <a class="btn-msg-big" href="messages.php">
+      Open Messages
+      <?php if ($unreadMessages > 0): ?><span class="msg-badge"><?= $unreadMessages ?></span><?php endif; ?>
+    </a>
   </div>
 
   <?php if ($message): ?>
@@ -398,7 +471,6 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
   </div>
 
   <div class="pd-grid">
-    <!-- Profile form -->
     <div class="card">
       <h3>Profile & Practice Details</h3>
       <form method="POST">
@@ -444,7 +516,6 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
       </form>
     </div>
 
-    <!-- Photo upload -->
     <div class="card photo-area">
       <h3>Profile Photo</h3>
       <?php if ($photoUrl): ?>
@@ -463,7 +534,6 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
     </div>
   </div>
 
-  <!-- Documents -->
   <div class="card" style="margin-bottom:18px;">
     <h3>Verification Documents</h3>
     <p class="file-hint" style="margin-top:0;">Upload license, national ID, certificates, or clinic registration. Multiple files allowed.</p>
@@ -493,10 +563,15 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
   </div>
 
   <div class="actions">
+    <div class="action highlight-msg">
+      <h3>💬 Messages</h3>
+      <p>Chat with patients who message you. History and read receipts included.</p>
+      <a href="messages.php" class="btn-main">Open Messages<?php if ($unreadMessages > 0): ?> (<?= $unreadMessages ?> new)<?php endif; ?></a>
+    </div>
     <div class="action">
       <h3>📋 Referrals</h3>
       <p>Review incoming patient referrals assigned to you.</p>
-      <a href="../admin/manage-referrals.php" class="btn-main">View Referrals</a>
+      <a href="provider-referrals.php" class="btn-main">View Referrals</a>
     </div>
     <div class="action">
       <h3>🏥 Public Listing</h3>
@@ -512,8 +587,8 @@ $photoUrl = ($photo && file_exists(__DIR__ . '/../' . $photo)) ? '../' . $photo 
 </main>
 
 <script src="../js/dark-mode.js"></script>
+<script src="../js/mobile-logout.js"></script>
 <script>
-  // Live photo preview before upload
   const input = document.getElementById('profile_photo');
   const preview = document.getElementById('photoPreview');
   const fallback = document.getElementById('photoFallback');
