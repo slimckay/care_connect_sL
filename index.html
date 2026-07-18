@@ -33,27 +33,22 @@
       font-weight: 700;
       color: #fff;
       white-space: nowrap;
-      overflow: hidden;
-      border-right: 3px solid #1EB53A;
-      animation: typing 2s steps(13, end) forwards, blink-caret 0.75s step-end infinite;
     }
 
-    .typewriter .accent {
-      color: #1EB53A;
+    .typewriter .accent { color: #1EB53A; }
+    .typewriter .blue { color: #0000CD; }
+
+    .cursor {
+      display: inline-block;
+      width: 3px;
+      background-color: #1EB53A;
+      margin-left: 4px;
+      animation: blink 0.7s step-end infinite;
     }
 
-    .typewriter .blue {
-      color: #0000CD;
-    }
-
-    @keyframes typing {
-      from { width: 0 }
-      to { width: 100% }
-    }
-
-    @keyframes blink-caret {
-      from, to { border-color: transparent }
-      50% { border-color: #1EB53A; }
+    @keyframes blink {
+      from, to { opacity: 1; }
+      50% { opacity: 0; }
     }
 
     .subtitle {
@@ -61,7 +56,7 @@
       font-size: 1.1rem;
       margin-top: 12px;
       letter-spacing: 0.1em;
-      animation: fadeUp 1.2s ease 2.2s forwards;
+      animation: fadeUp 1.2s ease 2.8s forwards;
       opacity: 0;
     }
 
@@ -69,7 +64,7 @@
       display: flex;
       gap: 10px;
       margin-top: 30px;
-      animation: fadeUp 1.2s ease 2.5s forwards;
+      animation: fadeUp 1.2s ease 3.1s forwards;
       opacity: 0;
     }
 
@@ -92,25 +87,13 @@
     @keyframes fadeUp {
       to { opacity: 1; transform: translateY(0); }
     }
-
-    /* Hero and other styles remain the same as before */
-    .hero {
-      background: linear-gradient(135deg, rgba(30,181,58,0.92) 0%, rgba(255,255,255,0.3) 40%, rgba(0,0,205,0.92) 100%),
-        url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
-      position: relative;
-      min-height: 90vh;
-      display: flex;
-      align-items: center;
-    }
   </style>
 </head>
 <body>
 
-<!-- ===== SPLASH SCREEN WITH TYPEWRITER ===== -->
+<!-- ===== SPLASH SCREEN WITH JAVASCRIPT TYPEWRITER ===== -->
 <div id="splash">
-  <div class="typewriter">
-    Care<span class="accent">Connect</span> <span class="blue">SL</span>
-  </div>
+  <div class="typewriter" id="typewriter-text"></div>
   <div class="subtitle">Sierra Leone's Healthcare Referral Platform</div>
   <div class="loading-dots">
     <span></span><span></span><span></span>
@@ -139,20 +122,54 @@
   </div>
 </header>
 
-<!-- Hero and rest of the page content stays the same -->
+<!-- Hero Section -->
 <section class="hero">
-  <!-- ... existing hero content ... -->
+  <!-- existing hero content -->
 </section>
 
-<!-- Rest of the page content (keep as is) -->
-
 <script src="/js/main.js"></script>
+
 <script>
-  // Splash screen hide after animation
+  // JavaScript Typewriter Effect
+  function typeWriter(element, text, speed = 120) {
+    let i = 0;
+    element.innerHTML = '';
+
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    element.appendChild(cursor);
+
+    function typing() {
+      if (i < text.length) {
+        // Insert text before cursor
+        const textNode = document.createTextNode(text.charAt(i));
+        element.insertBefore(textNode, cursor);
+        i++;
+        setTimeout(typing, speed);
+      } else {
+        // Keep cursor blinking after typing finishes
+        setTimeout(() => {
+          cursor.style.animation = 'blink 0.7s step-end infinite';
+        }, 300);
+      }
+    }
+
+    typing();
+  }
+
+  // Initialize splash screen
   document.addEventListener('DOMContentLoaded', function() {
+    const splash = document.getElementById('splash');
+    const typewriterEl = document.getElementById('typewriter-text');
+
+    // Start typewriter effect
+    const fullText = 'CareConnect SL';
+    typeWriter(typewriterEl, fullText, 110);
+
+    // Hide splash after animation completes
     setTimeout(function() {
-      document.getElementById('splash').classList.add('hidden');
-    }, 3200); // Slightly longer to let typewriter finish
+      splash.classList.add('hidden');
+    }, 3800);
   });
 </script>
 </body>
