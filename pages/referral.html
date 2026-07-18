@@ -16,23 +16,11 @@
       padding: 40px 36px;
       color: #1F2937;
     }
-    .form-card h1 {
-      text-align: center;
-      margin-bottom: 8px;
-      color: #0F1C3A !important;
-    }
-    .form-card > p.subtitle {
-      text-align: center;
-      color: #64748B !important;
-      margin-bottom: 24px;
-    }
+    .form-card h1 { text-align: center; margin-bottom: 8px; color: #0F1C3A !important; }
+    .form-card > p.subtitle { text-align: center; color: #64748B !important; margin-bottom: 24px; }
     .form-group { margin-bottom: 20px; }
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #1F2937 !important;
-    }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #1F2937 !important; }
+    .form-group .hint { display:block; font-weight:500; font-size:0.85rem; color:#64748B !important; margin-top:6px; }
     .form-group input,
     .form-group textarea,
     .form-group select {
@@ -47,87 +35,50 @@
     }
     .form-group input:focus,
     .form-group textarea:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: #1EB53A;
-    }
+    .form-group select:focus { outline: none; border-color: #1EB53A; }
     .btn-primary {
-      width: 100%;
-      padding: 15px;
-      font-size: 1.1rem;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      background: linear-gradient(135deg, #1EB53A, #0000CD);
-      color: white;
-      font-weight: 700;
+      width: 100%; padding: 15px; font-size: 1.1rem; border: none; border-radius: 12px;
+      cursor: pointer; background: linear-gradient(135deg, #1EB53A, #0000CD);
+      color: white; font-weight: 700;
     }
-    .btn-primary:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
+    .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
 
-    /* Toast / notification */
-    .toast {
-      display: none;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 16px 18px;
+    .doctor-box {
+      border: 1.5px solid #BBF7D0;
+      background: #F0FDF4;
       border-radius: 14px;
-      margin-bottom: 22px;
-      font-size: 0.98rem;
-      line-height: 1.45;
-      border: 1px solid transparent;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .doctor-box strong { color: #065F46 !important; display:block; margin-bottom:8px; }
+
+    .toast {
+      display: none; align-items: flex-start; gap: 12px; padding: 16px 18px;
+      border-radius: 14px; margin-bottom: 22px; font-size: 0.98rem;
+      line-height: 1.45; border: 1px solid transparent;
     }
     .toast.show { display: flex; }
-    .toast.success {
-      background: #ECFDF5;
-      border-color: #A7F3D0;
-      color: #065F46;
-    }
-    .toast.error {
-      background: #FEF2F2;
-      border-color: #FECACA;
-      color: #991B1B;
-    }
+    .toast.success { background: #ECFDF5; border-color: #A7F3D0; color: #065F46; }
+    .toast.error { background: #FEF2F2; border-color: #FECACA; color: #991B1B; }
     .toast .toast-icon { font-size: 1.35rem; line-height: 1; }
     .toast .toast-body { flex: 1; }
     .toast .toast-body strong { display: block; margin-bottom: 2px; }
     .toast .toast-close {
-      background: none;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      opacity: 0.6;
-      color: inherit;
-      padding: 0;
-      line-height: 1;
+      background: none; border: none; font-size: 1.2rem; cursor: pointer;
+      opacity: 0.6; color: inherit; padding: 0; line-height: 1;
     }
 
-    [data-theme="dark"] .form-card {
-      background: #1e293b !important;
-      color: #e2e8f0 !important;
-    }
+    [data-theme="dark"] .form-card { background: #1e293b !important; color: #e2e8f0 !important; }
     [data-theme="dark"] .form-card h1 { color: #f8fafc !important; }
     [data-theme="dark"] .form-card > p.subtitle { color: #94A3B8 !important; }
     [data-theme="dark"] .form-group label { color: #e2e8f0 !important; }
     [data-theme="dark"] .form-group input,
     [data-theme="dark"] .form-group textarea,
     [data-theme="dark"] .form-group select {
-      background: #0f172a !important;
-      color: #e2e8f0 !important;
-      border-color: #334155 !important;
+      background: #0f172a !important; color: #e2e8f0 !important; border-color: #334155 !important;
     }
-    [data-theme="dark"] .toast.success {
-      background: #064E3B;
-      border-color: #059669;
-      color: #D1FAE5;
-    }
-    [data-theme="dark"] .toast.error {
-      background: #7F1D1D;
-      border-color: #DC2626;
-      color: #FEE2E2;
-    }
+    [data-theme="dark"] .doctor-box { background: #052e16; border-color: #166534; }
+    [data-theme="dark"] .doctor-box strong { color: #bbf7d0 !important; }
   </style>
 </head>
 <body>
@@ -154,9 +105,8 @@
 <div class="form-container">
   <div class="form-card">
     <h1>Submit a Referral</h1>
-    <p class="subtitle">Fill in the patient details below. Our team will follow up.</p>
+    <p class="subtitle">Choose an available doctor or clinic, or leave it open for any provider.</p>
 
-    <!-- Success / error notification -->
     <div id="toast" class="toast" role="alert" aria-live="polite">
       <div class="toast-icon" id="toastIcon"></div>
       <div class="toast-body">
@@ -167,6 +117,17 @@
     </div>
 
     <form id="referralForm" method="POST" action="/referral.php">
+      <div class="doctor-box">
+        <strong>👨‍⚕️ Pick a doctor / clinic (optional)</strong>
+        <div class="form-group" style="margin-bottom:0;">
+          <label for="assigned_to">Available providers</label>
+          <select id="assigned_to" name="assigned_to">
+            <option value="">Any available provider (admin / open pool)</option>
+          </select>
+          <span class="hint" id="providerHint">Loading available doctors...</span>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="patient_name">Patient Full Name *</label>
         <input type="text" id="patient_name" name="patient_name" required minlength="2" maxlength="100" placeholder="e.g. Mariama Sesay">
@@ -188,8 +149,8 @@
       </div>
 
       <div class="form-group">
-        <label for="preferred_clinic">Preferred Clinic (optional)</label>
-        <input type="text" id="preferred_clinic" name="preferred_clinic" maxlength="100" placeholder="e.g. Connaught Hospital">
+        <label for="preferred_clinic">Preferred Clinic note (optional)</label>
+        <input type="text" id="preferred_clinic" name="preferred_clinic" maxlength="100" placeholder="Extra note, e.g. near East End">
       </div>
 
       <div class="form-group">
@@ -211,51 +172,73 @@
     const icon = document.getElementById('toastIcon');
     const titleEl = document.getElementById('toastTitle');
     const msgEl = document.getElementById('toastMessage');
-
     toast.className = 'toast show ' + type;
     icon.textContent = type === 'success' ? '✅' : '⚠️';
     titleEl.textContent = title;
     msgEl.textContent = message;
-
-    // Auto-hide success after 8s
-    if (type === 'success') {
-      setTimeout(hideToast, 8000);
-    }
+    if (type === 'success') setTimeout(hideToast, 8000);
   }
-
   function hideToast() {
-    const toast = document.getElementById('toast');
-    toast.classList.remove('show');
+    document.getElementById('toast').classList.remove('show');
   }
 
-  // Read URL params on load
+  // Load available doctors
+  (function loadProviders() {
+    const select = document.getElementById('assigned_to');
+    const hint = document.getElementById('providerHint');
+    fetch('/api/available-providers.php', { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(data => {
+        const list = (data && data.providers) || [];
+        if (!list.length) {
+          hint.textContent = 'No listed providers yet. Your referral will go to the open pool.';
+          return;
+        }
+        list.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = (p.verified ? '✅ ' : '') + p.label;
+          select.appendChild(opt);
+        });
+        hint.textContent = list.length + ' provider(s) available. Pick one or leave as open pool.';
+
+        // Preselect if ?doctor=ID in URL (from Find Care page later)
+        const params = new URLSearchParams(window.location.search);
+        const doc = params.get('doctor');
+        if (doc && select.querySelector('option[value="' + doc + '"]')) {
+          select.value = doc;
+        }
+      })
+      .catch(() => {
+        hint.textContent = 'Could not load provider list. You can still submit to the open pool.';
+      });
+  })();
+
   (function () {
     const params = new URLSearchParams(window.location.search);
-
     if (params.get('sent') === '1') {
+      const assigned = params.get('assigned');
       showToast(
         'success',
         'Referral submitted successfully!',
-        'Our team has received it and will follow up soon. You can submit another referral below if needed.'
+        assigned === '1'
+          ? 'Your chosen doctor/clinic has been notified. They will follow up soon.'
+          : 'Our team received it. An available provider can pick it up soon.'
       );
-      // Clean URL so refresh does not re-show toast forever
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-
     const error = params.get('error');
     if (error) {
       let message = 'Something went wrong. Please try again.';
       if (error === 'validation') message = 'Please check the form fields and try again.';
       if (error === 'too_many') message = 'Too many submissions from this device. Please wait a while and try again.';
       if (error === 'server') message = 'Server error while saving. Please try again in a moment.';
-      if (error === 'csrf') message = 'Session expired. Please refresh the page and try again.';
-
+      if (error === 'doctor') message = 'Selected doctor is not available. Pick another or leave open.';
       showToast('error', 'Could not submit referral', message);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   })();
 
-  // Disable button while submitting to prevent double-submit
   document.getElementById('referralForm').addEventListener('submit', function () {
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;

@@ -1,7 +1,7 @@
 <?php
 /**
  * Referral Handler - Care Connect SL
- * Schema-resilient: works whether DB uses `condition` or `medical_condition`
+ * Supports optional assigned_to (patient picks available doctor)
  */
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -42,8 +42,10 @@ $referrer = function_exists('sanitizeInput')
     ? sanitizeInput($_POST['referrer'] ?? 'self')
     : 'self';
 $user_id = $_SESSION['user_id'] ?? null;
+$assigned_to = isset($_POST['assigned_to']) && $_POST['assigned_to'] !== ''
+    ? (int)$_POST['assigned_to']
+    : null;
 
-// Basic validation
 if ($patient_name === '' || strlen($patient_name) < 2
     || $contact === ''
     || $location === '' || strlen($location) < 3
@@ -54,8 +56,40 @@ if ($patient_name === '' || strlen($patient_name) < 2
     exit;
 }
 
+// Validate selected doctor if provided
+$assignedDoctorName = null;
+if ($assigned_to) {
+    try {
+        $ds = $conn->prepare("SELECT id, name, role FROM users WHERE id = ? AND role IN ('doctor','hospital') LIMIT 1");
+        $ds->execute([$assigned_to]);
+        $doc = $ds->fetch();
+        if (!$doc) {
+            header('Location: pages/referral.html?error=doctor');
+            exit;
+        }
+        $assignedDoctorName = $doc['name'];
+        // Fill preferred_clinic from doctor if empty
+        if ($preferred_clinic === '') {
+            try {
+                $ps = $conn->prepare("SELECT clinic_name FROM provider_profiles WHERE user_id = ? LIMIT 1");
+                $ps->execute([$assigned_to]);
+                $pr = $ps->fetch();
+                if (!empty($pr['clinic_name'])) {
+                    $preferred_clinic = $pr['clinic_name'];
+                } else {
+                    $preferred_clinic = $assignedDoctorName;
+                }
+            } catch (Exception $e) {
+                $preferred_clinic = $assignedDoctorName;
+            }
+        }
+    } catch (Exception $e) {
+        header('Location: pages/referral.html?error=doctor');
+        exit;
+    }
+}
+
 try {
-    // Discover actual columns on referrals table
     $cols = [];
     try {
         $colStmt = $conn->query('SHOW COLUMNS FROM referrals');
@@ -66,17 +100,11 @@ try {
         $cols = [];
     }
 
-    // Pick the correct medical text column
     $conditionCol = null;
-    if (isset($cols['medical_condition'])) {
-        $conditionCol = $cols['medical_condition'];
-    } elseif (isset($cols['condition'])) {
-        $conditionCol = $cols['condition'];
-    } elseif (isset($cols['reason'])) {
-        $conditionCol = $cols['reason'];
-    }
+    if (isset($cols['medical_condition'])) $conditionCol = $cols['medical_condition'];
+    elseif (isset($cols['condition'])) $conditionCol = $cols['condition'];
+    elseif (isset($cols['reason'])) $conditionCol = $cols['reason'];
 
-    // Build insert dynamically from available columns
     $fields = [];
     $values = [];
     $params = [];
@@ -89,6 +117,7 @@ try {
         'preferred_clinic' => ($preferred_clinic !== '' ? $preferred_clinic : null),
         'referrer' => $referrer,
         'user_id' => $user_id,
+        'assigned_to' => $assigned_to,
         'status' => 'pending',
         'ip_address' => $ip,
     ];
@@ -101,21 +130,18 @@ try {
         }
     }
 
-    // Condition / medical_condition column
     if ($conditionCol !== null) {
         $fields[] = '`' . $conditionCol . '`';
         $values[] = '?';
         $params[] = $condition;
     }
 
-    // created_at if present and no default relied on
     if (isset($cols['created_at'])) {
         $fields[] = '`' . $cols['created_at'] . '`';
         $values[] = 'NOW()';
     }
 
     if (empty($fields) || $conditionCol === null) {
-        // Absolute fallback – minimal known schema
         $sql = "INSERT INTO referrals (patient_name, contact, location, medical_condition, status)
                 VALUES (?, ?, ?, ?, 'pending')";
         $stmt = $conn->prepare($sql);
@@ -126,32 +152,60 @@ try {
         $stmt->execute($params);
     }
 
-    $referralId = $conn->lastInsertId();
-    error_log('New referral submitted: ID ' . $referralId . ' for ' . $patient_name);
+    $referralId = (int)$conn->lastInsertId();
 
-    header('Location: pages/referral.html?sent=1');
+    // Notify selected doctor
+    if ($assigned_to) {
+        try {
+            $conn->prepare("
+                INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
+                VALUES (?, 'referral_assigned', 'New referral for you', ?, ?, 0, NOW())
+            ")->execute([
+                $assigned_to,
+                'A new referral for ' . $patient_name . ' was assigned to you.',
+                'dashboard/provider-referrals.php'
+            ]);
+        } catch (Exception $e) {}
+    }
+
+    // Notify admins
+    try {
+        $admins = $conn->query("SELECT id FROM users WHERE role = 'admin'")->fetchAll();
+        $msg = $assignedDoctorName
+            ? 'New referral for ' . $patient_name . ' assigned to ' . $assignedDoctorName . '.'
+            : 'New referral for ' . $patient_name . ' (open pool).';
+        $n = $conn->prepare("INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
+                             VALUES (?, 'referral_new', 'New referral submitted', ?, 'admin/manage-referrals.php', 0, NOW())");
+        foreach ($admins as $a) {
+            $n->execute([(int)$a['id'], $msg]);
+        }
+    } catch (Exception $e) {}
+
+    $q = 'sent=1';
+    if ($assigned_to) $q .= '&assigned=1';
+    header('Location: pages/referral.html?' . $q);
     exit;
 
 } catch (PDOException $e) {
     error_log('Referral PDO error: ' . $e->getMessage());
 
-    // Last-resort minimal insert attempts
     $attempts = [
+        "INSERT INTO referrals (patient_name, age, contact, location, medical_condition, status, assigned_to) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
+        "INSERT INTO referrals (patient_name, age, contact, location, `condition`, status, assigned_to) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
         "INSERT INTO referrals (patient_name, age, contact, location, medical_condition, status) VALUES (?, ?, ?, ?, ?, 'pending')",
         "INSERT INTO referrals (patient_name, age, contact, location, `condition`, status) VALUES (?, ?, ?, ?, ?, 'pending')",
-        "INSERT INTO referrals (patient_name, contact, location, medical_condition) VALUES (?, ?, ?, ?)",
-        "INSERT INTO referrals (patient_name, contact, location, `condition`) VALUES (?, ?, ?, ?)",
     ];
 
     foreach ($attempts as $i => $sql) {
         try {
             $stmt = $conn->prepare($sql);
             if ($i < 2) {
-                $stmt->execute([$patient_name, $age, $contact, $location, $condition]);
+                $stmt->execute([$patient_name, $age, $contact, $location, $condition, $assigned_to]);
             } else {
-                $stmt->execute([$patient_name, $contact, $location, $condition]);
+                $stmt->execute([$patient_name, $age, $contact, $location, $condition]);
             }
-            header('Location: pages/referral.html?sent=1');
+            $q = 'sent=1' . ($assigned_to ? '&assigned=1' : '');
+            header('Location: pages/referral.html?' . $q);
             exit;
         } catch (Exception $inner) {
             error_log('Referral fallback ' . $i . ' failed: ' . $inner->getMessage());
