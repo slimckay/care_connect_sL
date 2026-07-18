@@ -2,7 +2,7 @@
 header('Content-Type: image/jpeg');
 header('Cache-Control: public, max-age=604800');
 $b64 = '';
-for ($i = 1; $i <= 11; $i++) {
+for ($i = 1; $i <= 10; $i++) {
     $f = __DIR__ . "/h{$i}.txt";
     if (file_exists($f)) $b64 .= trim(file_get_contents($f));
 }
