@@ -361,6 +361,7 @@
         <li><a href="index.html">Home</a></li>
         <li><a href="pages/doctors.php">Find Care</a></li>
         <li><a href="pages/referral.html">Submit Referral</a></li>
+        <li><a href="pages/contact.html">Contact</a></li>
         <li><a href="ai-chat.php">AI Assistant</a></li>
       </ul>
     </div>
@@ -373,6 +374,9 @@
     </div>
     <div>
       <h3>Contact</h3>
+      <ul class="footer-links">
+        <li><a href="pages/contact.html">Contact Page</a></li>
+      </ul>
       <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
       <p><a href="tel:+23276000000">+232 76 000 000</a></p>
     </div>
@@ -404,21 +408,18 @@
     const splash = document.getElementById('splash');
     if (!splash) return;
 
-    // Skip splash on quick revisits in same session
     if (sessionStorage.getItem('cc_splash_seen') === '1') {
       splash.classList.add('hide');
       splash.style.display = 'none';
       return;
     }
 
-    // Faster: show briefly then fade out smoothly
     const hideSplash = () => {
       splash.classList.add('hide');
       sessionStorage.setItem('cc_splash_seen', '1');
       setTimeout(() => { splash.style.display = 'none'; }, 380);
     };
 
-    // Prefer DOMContentLoaded over full window load so it feels quicker
     const start = () => setTimeout(hideSplash, 1100);
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', start);
