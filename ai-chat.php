@@ -269,7 +269,7 @@ if (session_status() === PHP_SESSION_NONE) {
 <main class="chat-page">
     <div class="chat-page-title">
         <h1>🤖 CareConnect AI Assistant</h1>
-        <p>Talk to me about symptoms, common illnesses in Sierra Leone, or how to get care</p>
+        <p>Powered by OpenRouter — talk naturally about symptoms, illness, or referrals</p>
     </div>
 
     <div class="chat-container">
@@ -284,7 +284,7 @@ if (session_status() === PHP_SESSION_NONE) {
         <div class="chat-messages" id="chatMessages">
             <div class="message ai">
                 👋 Hello! I'm your CareConnect health assistant for Sierra Leone.<br><br>
-                You can talk to me naturally. Tell me how you feel, ask about malaria, fever, typhoid, diarrhea, cough, pregnancy care, or how to get a referral.<br><br>
+                You can talk to me naturally about symptoms, malaria, fever, typhoid, diarrhea, cough, pregnancy care, or how to get a referral.<br><br>
                 What would you like help with today?
             </div>
         </div>
@@ -312,7 +312,7 @@ const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 
 let isProcessing = false;
-let conversationContext = [];
+let conversationHistory = [];
 
 function addMessage(text, sender) {
     const div = document.createElement('div');
@@ -340,221 +340,83 @@ async function sendMessage() {
     const message = chatInput.value.trim();
     if (!message || isProcessing) return;
 
-    addMessage(message, 'user');
-    conversationContext.push({ role: 'user', text: message });
+    addMessage(escapeHtml(message), 'user');
+    conversationHistory.push({ role: 'user', content: message });
     chatInput.value = '';
     isProcessing = true;
     showTyping();
 
-    setTimeout(() => {
+    try {
+        const response = await fetch('ai-api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: message,
+                history: conversationHistory.slice(0, -1)
+            })
+        });
+
+        const data = await response.json();
         hideTyping();
-        const response = getConversationalResponse(message);
-        addMessage(response, 'ai');
-        conversationContext.push({ role: 'ai', text: response });
-        isProcessing = false;
-    }, 700);
+
+        if (data.reply) {
+            addMessage(data.reply, 'ai');
+            conversationHistory.push({ role: 'assistant', content: stripHtml(data.reply) });
+        } else {
+            // Fallback to local knowledge if OpenRouter fails
+            const fallback = getLocalResponse(message);
+            addMessage(fallback, 'ai');
+            conversationHistory.push({ role: 'assistant', content: stripHtml(fallback) });
+        }
+    } catch (err) {
+        hideTyping();
+        const fallback = getLocalResponse(message);
+        addMessage(fallback + '<br><br><em>(Using offline mode)</em>', 'ai');
+        conversationHistory.push({ role: 'assistant', content: stripHtml(fallback) });
+    }
+
+    // Keep history short
+    if (conversationHistory.length > 12) {
+        conversationHistory = conversationHistory.slice(-12);
+    }
+
+    isProcessing = false;
 }
 
-function getConversationalResponse(query) {
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+}
+
+// Local fallback if OpenRouter is unavailable
+function getLocalResponse(query) {
     const q = query.toLowerCase();
-    const recent = conversationContext.slice(-4).map(m => m.text.toLowerCase()).join(' ');
 
-    // Greetings / small talk
-    if (/^(hi|hello|hey|good morning|good afternoon|good evening)\b/.test(q)) {
-        return `Hello! 😊 I'm here to help with health questions relevant to Sierra Leone.<br><br>You can tell me your symptoms, ask about common illnesses like malaria or typhoid, or ask how to get a referral. What's going on?`;
+    if (q.includes('malaria')) {
+        return `🦟 <strong>Malaria</strong><br><br>Symptoms often include high fever, chills, headache, and body pain.<br><br>Please get tested quickly at a clinic. If positive, start treatment the same day, rest, and drink fluids.`;
     }
-
-    if (q.includes('thank') || q.includes('thanks')) {
-        return `You're very welcome. 🙏 Take care of yourself. If anything gets worse or you're unsure, please visit a nearby clinic or hospital.<br><br>Is there anything else I can help you with?`;
+    if (q.includes('fever')) {
+        return `🌡️ <strong>Fever</strong><br><br>Rest, drink clean water, and take paracetamol if available. See a clinic if fever lasts more than 2–3 days or becomes very high.`;
     }
-
-    if (q.includes('how are you')) {
-        return `I'm doing well, thank you! Ready to help. How are <strong>you</strong> feeling today?`;
-    }
-
-    // Emergency flags
-    if (q.includes('cannot breathe') || q.includes("can't breathe") || q.includes('chest pain') || q.includes('unconscious') || q.includes('severe bleeding') || q.includes('convulsion') || q.includes('seizure')) {
-        return `🚨 <strong>This sounds urgent.</strong><br><br>Please go to the nearest hospital or call emergency help right away. Don't wait for online advice in emergency situations.<br><br>If you can, ask someone nearby to take you to care now.`;
-    }
-
-    // Malaria
-    if (q.includes('malaria') || (q.includes('mosquito') && q.includes('fever')) || (q.includes('chills') && q.includes('fever'))) {
-        return `🦟 <strong>Malaria is very common in Sierra Leone.</strong><br><br>
-<strong>Typical symptoms:</strong><br>
-• High fever<br>
-• Chills and sweating<br>
-• Headache and body pain<br>
-• Weakness / tiredness<br>
-• Sometimes vomiting<br><br>
-<strong>What you should do:</strong><br>
-1. Get a malaria test as soon as possible at a clinic or pharmacy that offers testing.<br>
-2. If positive, start treatment the same day (don't delay).<br>
-3. Rest and drink plenty of fluids.<br>
-4. Use a mosquito net and keep the area clean to reduce reinfection.<br><br>
-If fever is very high, the person is a child, pregnant, or getting worse quickly, go to a hospital today.<br><br>
-Would you like me to explain what to do while waiting for a test?`;
-    }
-
-    // Fever
-    if (q.includes('fever') || q.includes('temperature') || q.includes('hot body')) {
-        return `🌡️ <strong>Fever</strong> means the body is fighting something.<br><br>
-In Sierra Leone, common causes include malaria, infection, typhoid, or flu-like illness.<br><br>
-<strong>Home care:</strong><br>
-• Rest<br>
-• Drink plenty of clean water / ORS if needed<br>
-• Take paracetamol if available (follow correct dose)<br>
-• Remove excess clothing and keep the room cool<br><br>
-<strong>See a clinic if:</strong><br>
-• Fever lasts more than 2–3 days<br>
-• Very high fever<br>
-• With severe headache, vomiting, stiff neck, or confusion<br>
-• In a baby, pregnant woman, or elderly person<br><br>
-Do you also have chills, headache, or stomach pain? That can help me guide you better.`;
-    }
-
-    // Typhoid
     if (q.includes('typhoid')) {
-        return `🦠 <strong>Typhoid fever</strong> is spread through contaminated food or water.<br><br>
-<strong>Common symptoms:</strong><br>
-• High fever that may rise slowly<br>
-• Headache<br>
-• Stomach pain<br>
-• Weakness and loss of appetite<br>
-• Sometimes diarrhea or constipation<br><br>
-<strong>What to do:</strong><br>
-• Get tested at a health facility<br>
-• Treatment usually needs antibiotics prescribed by a clinician<br>
-• Drink clean water only and eat well-cooked food<br>
-• Rest and avoid self-medication with incomplete antibiotics<br><br>
-If symptoms are severe or the person is dehydrated, go to a hospital. Would you like prevention tips too?`;
+        return `🦠 <strong>Typhoid</strong><br><br>Common signs: high fever, headache, stomach pain, weakness. Get tested and follow clinic treatment. Drink clean water and eat safe food.`;
+    }
+    if (q.includes('diarrhea') || q.includes('diarrhoea')) {
+        return `💧 <strong>Diarrhea</strong><br><br>Drink ORS often. Seek care if there is blood, severe dehydration, or it lasts more than 2 days.`;
+    }
+    if (q.includes('referral')) {
+        return `📋 You can submit a referral on the Referrals page. For emergencies, go directly to the nearest hospital.`;
     }
 
-    // Diarrhea / cholera-like
-    if (q.includes('diarrhea') || q.includes('diarrhoea') || q.includes('running stomach') || q.includes('cholera') || q.includes('loose stool')) {
-        return `💧 <strong>Diarrhea</strong> can become dangerous mainly because of dehydration.<br><br>
-<strong>Immediate care:</strong><br>
-• Drink ORS (oral rehydration solution) often<br>
-• Continue small amounts of food if possible<br>
-• Avoid unclean water and street food for now<br>
-• Wash hands with soap regularly<br><br>
-<strong>Go to a clinic quickly if:</strong><br>
-• Blood in stool<br>
-• Very watery diarrhea that doesn't stop<br>
-• Signs of dehydration (dry mouth, no urine, dizziness)<br>
-• High fever with diarrhea<br>
-• Baby or elderly person is affected<br><br>
-I can also explain how to prepare simple ORS if you need that.`;
-    }
-
-    // Cough / cold / pneumonia signs
-    if (q.includes('cough') || q.includes('cold') || q.includes('flu') || q.includes('catarrh') || q.includes('breathing')) {
-        return `🤧 <strong>Cough and cold</strong> are common, but breathing problems need attention.<br><br>
-<strong>Helpful care:</strong><br>
-• Rest and drink warm fluids<br>
-• Steam inhalation can ease blocked nose<br>
-• Avoid smoke and dust where possible<br><br>
-<strong>See a doctor if:</strong><br>
-• Difficulty breathing<br>
-• Chest pain<br>
-• Cough lasting more than 10–14 days<br>
-• High fever with cough<br>
-• Coughing blood<br><br>
-Is the cough dry, or is there phlegm? And do you have fever with it?`;
-    }
-
-    // Headache
-    if (q.includes('headache') || q.includes('migraine')) {
-        return `😫 <strong>Headache</strong> can come from stress, dehydration, malaria, sinus problems, or eye strain.<br><br>
-<strong>Try this first:</strong><br>
-• Rest in a quiet place<br>
-• Drink water<br>
-• Take paracetamol if appropriate<br>
-• Reduce screen time and rest your eyes<br><br>
-<strong>Seek care if headache is:</strong><br>
-• Sudden and very severe<br>
-• With fever, stiff neck, vomiting, or confusion<br>
-• After a head injury<br>
-• Getting worse over days<br><br>
-Do you also have fever or neck stiffness?`;
-    }
-
-    // Stomach pain
-    if (q.includes('stomach') || q.includes('belly') || q.includes('abdominal') || q.includes('ulcer')) {
-        return `🤢 <strong>Stomach pain</strong> has many causes — food, infection, ulcer, or more serious issues.<br><br>
-<strong>Helpful steps:</strong><br>
-• Rest and avoid heavy / spicy food for a while<br>
-• Drink clean water in small sips<br>
-• Note if pain is mild, sharp, or with vomiting/diarrhea<br><br>
-<strong>Go to a clinic urgently if:</strong><br>
-• Severe pain that doesn't ease<br>
-• Vomiting blood or black stool<br>
-• Pain with high fever<br>
-• Swollen hard abdomen<br><br>
-Can you tell me if the pain is upper stomach, lower stomach, or all over?`;
-    }
-
-    // Pregnancy related basic guidance
-    if (q.includes('pregnant') || q.includes('pregnancy') || q.includes('antenatal')) {
-        return `🤰 <strong>Pregnancy care is very important.</strong><br><br>
-Please visit an antenatal clinic regularly. In Sierra Leone, early and repeated checkups help protect mother and baby.<br><br>
-<strong>General advice:</strong><br>
-• Attend antenatal visits as scheduled<br>
-• Sleep under a mosquito net (malaria is dangerous in pregnancy)<br>
-• Take prescribed supplements if given by the clinic<br>
-• Seek care quickly for bleeding, severe headache, swelling, or reduced baby movement<br><br>
-I can give general guidance, but a trained midwife or doctor should manage pregnancy care. Would you like help finding how to request a referral?`;
-    }
-
-    // Children
-    if (q.includes('baby') || q.includes('child') || q.includes('my son') || q.includes('my daughter') || q.includes('infant')) {
-        return `👶 For children, it's safer to act early.<br><br>
-<strong>Take a child to a clinic promptly if there is:</strong><br>
-• High fever<br>
-• Difficulty breathing<br>
-• Refusal to eat/drink<br>
-• Unusual sleepiness or irritability<br>
-• Diarrhea with dehydration signs<br><br>
-Please don't wait too long with babies and young children. If you share the main symptoms, I can help you know what to watch for.`;
-    }
-
-    // Referral help
-    if (q.includes('referral') || q.includes('see a doctor') || q.includes('find doctor') || q.includes('clinic') || q.includes('hospital')) {
-        return `📋 <strong>I can help you get connected to care.</strong><br><br>
-On Care Connect SL you can:<br>
-1. Go to the <strong>Referrals</strong> page and submit patient details<br>
-2. Use <strong>Find Care</strong> to look for verified providers<br>
-3. Contact the team if you need guidance<br><br>
-If this is urgent, please go directly to the nearest clinic or hospital instead of waiting.<br><br>
-Do you want the steps for submitting a referral?`;
-    }
-
-    // Prevention / general health
-    if (q.includes('prevent') || q.includes('protection') || q.includes('stay healthy')) {
-        return `🛡️ <strong>Simple prevention tips for Sierra Leone:</strong><br><br>
-• Sleep under insecticide-treated mosquito nets<br>
-• Drink clean / treated water<br>
-• Wash hands with soap before eating and after toilet
-• Cook food well and avoid unsafe leftovers<br>
-• Keep surroundings clean to reduce mosquitoes and disease<br>
-• Go for early testing when fever starts<br><br>
-Prevention saves time, money, and lives. Want tips focused on malaria or on water-related illness?`;
-    }
-
-    // Follow-up style conversational fallback using context
-    if (recent.includes('malaria') && (q.includes('yes') || q.includes('what next') || q.includes('while waiting'))) {
-        return `While waiting for a malaria test:<br><br>
-• Rest and stay hydrated<br>
-• Take paracetamol for fever if available<br>
-• Avoid self-starting strong medicines without guidance<br>
-• Go urgently if breathing becomes difficult, confusion starts, or the person can't keep fluids down<br><br>
-Please test as soon as you can. Would you like help with referral options?`;
-    }
-
-    // Default conversational response
-    return `I hear you. 🙂<br><br>
-I can help with common issues like <strong>malaria, fever, typhoid, diarrhea, cough, headache, stomach pain, pregnancy care basics, and referrals</strong>.<br><br>
-Tell me a bit more — for example: "I have fever and chills since yesterday" or "My child has diarrhea". The more details you share, the better I can guide you.<br><br>
-<strong>Note:</strong> I'm a support assistant, not a replacement for a doctor or hospital in emergencies.`;
+    return `I can help with malaria, fever, typhoid, diarrhea, cough, headache, and referrals. Please tell me your main symptom.`;
 }
 
 function sendSuggestion(text) {
