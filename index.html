@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/style.css">
   <base href="/">
   <style>
-    /* ===== CUTE SPLASH SCREEN ===== */
+    /* ===== FAST SMOOTH SPLASH ===== */
     #splash {
       position: fixed;
       inset: 0;
@@ -20,64 +20,75 @@
       flex-direction: column;
       background: linear-gradient(160deg, #0A1628 0%, #12253f 40%, #0f3d2a 100%);
       color: white;
-      transition: opacity 0.7s ease, visibility 0.7s ease;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.35s ease, visibility 0.35s ease, transform 0.35s ease;
+      will-change: opacity, transform;
     }
     #splash.hide {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
+      transform: scale(1.03);
     }
     .splash-heart {
-      font-size: 3.2rem;
+      font-size: 2.8rem;
       line-height: 1;
-      margin-bottom: 18px;
-      animation: softBounce 1.4s ease-in-out infinite;
+      margin-bottom: 14px;
+      animation: softBounce 1.1s ease-in-out infinite;
       filter: drop-shadow(0 8px 18px rgba(30, 181, 58, 0.35));
     }
     @keyframes softBounce {
       0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-10px) scale(1.08); }
+      50% { transform: translateY(-8px) scale(1.06); }
     }
     .splash-logo {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(2.2rem, 7vw, 3.4rem);
+      font-size: clamp(2.1rem, 7vw, 3.2rem);
       font-weight: 700;
       color: white;
       letter-spacing: 0.5px;
       min-height: 1.2em;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: logoIn 0.45s ease forwards 0.08s;
     }
-    .splash-logo .accent {
-      color: #4ADE80;
+    .splash-logo .accent { color: #4ADE80; }
+    @keyframes logoIn {
+      to { opacity: 1; transform: translateY(0); }
     }
     .splash-tagline {
       margin-top: 10px;
-      font-size: 0.98rem;
+      font-size: 0.95rem;
       color: rgba(255,255,255,0.78);
-      letter-spacing: 0.2px;
+      opacity: 0;
+      animation: logoIn 0.4s ease forwards 0.22s;
     }
     .splash-dots {
       display: flex;
       gap: 8px;
-      margin-top: 28px;
+      margin-top: 22px;
+      opacity: 0;
+      animation: logoIn 0.35s ease forwards 0.32s;
     }
     .splash-dots span {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       opacity: 0.35;
-      animation: dotPulse 1.2s ease-in-out infinite;
+      animation: dotPulse 0.9s ease-in-out infinite;
     }
     .splash-dots span:nth-child(1) { background: #1EB53A; }
-    .splash-dots span:nth-child(2) { background: #FFFFFF; animation-delay: 0.15s; }
-    .splash-dots span:nth-child(3) { background: #0000CD; animation-delay: 0.3s; }
+    .splash-dots span:nth-child(2) { background: #FFFFFF; animation-delay: 0.12s; }
+    .splash-dots span:nth-child(3) { background: #0000CD; animation-delay: 0.24s; }
     @keyframes dotPulse {
       0%, 100% { opacity: 0.3; transform: scale(0.85); }
-      50% { opacity: 1; transform: scale(1.15); }
+      50% { opacity: 1; transform: scale(1.12); }
     }
     .splash-note {
       position: absolute;
-      bottom: 28px;
-      font-size: 0.82rem;
+      bottom: 24px;
+      font-size: 0.8rem;
       color: rgba(255,255,255,0.45);
     }
 
@@ -249,10 +260,10 @@
 </head>
 <body>
 
-<!-- Cute Splash Screen -->
+<!-- Fast smooth splash -->
 <div id="splash">
   <div class="splash-heart" aria-hidden="true">💚</div>
-  <div class="splash-logo" id="typewriter-text"></div>
+  <div class="splash-logo">Care<span class="accent">Connect</span> SL</div>
   <div class="splash-tagline">Care that finds you, wherever you are</div>
   <div class="splash-dots" aria-hidden="true">
     <span></span><span></span><span></span>
@@ -371,28 +382,6 @@
 
 <script src="/js/dark-mode.js"></script>
 <script>
-  function typeWriter(element, text, speed = 80) {
-    let i = 0;
-    element.innerHTML = '';
-    const cursor = document.createElement('span');
-    cursor.textContent = '|';
-    cursor.style.color = '#4ADE80';
-    cursor.style.marginLeft = '2px';
-    cursor.style.animation = 'dotPulse 1s step-end infinite';
-    element.appendChild(cursor);
-
-    function typing() {
-      if (i < text.length) {
-        element.insertBefore(document.createTextNode(text.charAt(i)), cursor);
-        i++;
-        setTimeout(typing, speed);
-      } else {
-        element.innerHTML = 'Care<span class="accent">Connect</span> SL';
-      }
-    }
-    typing();
-  }
-
   function runHeroSearch(query) {
     const q = (query || '').trim().toLowerCase();
     if (!q) { window.location.href = 'pages/doctors.php'; return; }
@@ -411,24 +400,43 @@
     window.location.href = 'pages/doctors.php?q=' + encodeURIComponent(query.trim());
   }
 
-  window.onload = function() {
+  (function () {
     const splash = document.getElementById('splash');
-    const typewriterEl = document.getElementById('typewriter-text');
-    if (typewriterEl) typeWriter(typewriterEl, 'CareConnect SL', 75);
+    if (!splash) return;
 
-    setTimeout(() => {
-      if (splash) splash.classList.add('hide');
-    }, 2800);
+    // Skip splash on quick revisits in same session
+    if (sessionStorage.getItem('cc_splash_seen') === '1') {
+      splash.classList.add('hide');
+      splash.style.display = 'none';
+      return;
+    }
 
+    // Faster: show briefly then fade out smoothly
+    const hideSplash = () => {
+      splash.classList.add('hide');
+      sessionStorage.setItem('cc_splash_seen', '1');
+      setTimeout(() => { splash.style.display = 'none'; }, 380);
+    };
+
+    // Prefer DOMContentLoaded over full window load so it feels quicker
+    const start = () => setTimeout(hideSplash, 1100);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start);
+    } else {
+      start();
+    }
+  })();
+
+  document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('heroSearchForm');
     const input = document.getElementById('heroSearchInput');
     if (form && input) {
-      form.addEventListener('submit', function(e) {
+      form.addEventListener('submit', function (e) {
         e.preventDefault();
         runHeroSearch(input.value);
       });
     }
-  };
+  });
 </script>
 </body>
 </html>
