@@ -1,7 +1,7 @@
 <?php
 /**
  * Chat JSON API — Care Connect SL
- * Actions: conversations, messages, send, start
+ * Actions: conversations, messages, send, start, providers, mark_read
  */
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -28,7 +28,6 @@ if (!in_array($role, ['patient', 'doctor', 'hospital'], true)) {
     exit;
 }
 
-// Ensure tables
 try {
     $conn->exec("CREATE TABLE IF NOT EXISTS conversations (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -37,7 +36,9 @@ try {
         referral_id INT NULL,
         last_message_at DATETIME NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY uniq_pair (patient_id, provider_id)
+        UNIQUE KEY uniq_pair (patient_id, provider_id),
+        INDEX idx_patient (patient_id),
+        INDEX idx_provider (provider_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $conn->exec("CREATE TABLE IF NOT EXISTS chat_messages (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -45,9 +46,15 @@ try {
         sender_id INT NOT NULL,
         message TEXT NOT NULL,
         is_read TINYINT(1) DEFAULT 0,
+        read_at DATETIME NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_conversation (conversation_id)
+        INDEX idx_conversation (conversation_id),
+        INDEX idx_sender (sender_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    // Add read_at if missing on older installs
+    try {
+        $conn->exec("ALTER TABLE chat_messages ADD COLUMN read_at DATETIME NULL");
+    } catch (Exception $e) {}
 } catch (Exception $e) {}
 
 $action = $_GET['action'] ?? ($_POST['action'] ?? '');
@@ -73,20 +80,30 @@ function userCanAccess(PDO $conn, int $convId, int $userId): ?array
 {
     $stmt = $conn->prepare('SELECT * FROM conversations WHERE id = ? LIMIT 1');
     $stmt->execute([$convId]);
-    $conv = $stmt->fetch();
+    $conv = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$conv) return null;
     if ((int)$conv['patient_id'] !== $userId && (int)$conv['provider_id'] !== $userId) return null;
     return $conv;
 }
 
+function markConversationRead(PDO $conn, int $convId, int $userId): void
+{
+    $conn->prepare("
+        UPDATE chat_messages
+        SET is_read = 1, read_at = COALESCE(read_at, NOW())
+        WHERE conversation_id = ? AND sender_id != ? AND is_read = 0
+    ")->execute([$convId, $userId]);
+}
+
 try {
-    // List conversations
+    // List conversations (patient OR doctor both see their side)
     if ($action === 'conversations') {
         if ($role === 'patient') {
             $stmt = $conn->prepare("
-                SELECT c.id, c.patient_id, c.provider_id, c.last_message_at,
+                SELECT c.id, c.patient_id, c.provider_id, c.last_message_at, c.created_at,
                        u.name AS other_name, u.role AS other_role,
                        (SELECT message FROM chat_messages m WHERE m.conversation_id = c.id ORDER BY m.id DESC LIMIT 1) AS last_message,
+                       (SELECT created_at FROM chat_messages m WHERE m.conversation_id = c.id ORDER BY m.id DESC LIMIT 1) AS last_message_time,
                        (SELECT COUNT(*) FROM chat_messages m WHERE m.conversation_id = c.id AND m.sender_id != ? AND m.is_read = 0) AS unread
                 FROM conversations c
                 JOIN users u ON u.id = c.provider_id
@@ -95,10 +112,12 @@ try {
             ");
             $stmt->execute([$userId, $userId]);
         } else {
+            // Doctor / hospital — must see chats patients started with them
             $stmt = $conn->prepare("
-                SELECT c.id, c.patient_id, c.provider_id, c.last_message_at,
+                SELECT c.id, c.patient_id, c.provider_id, c.last_message_at, c.created_at,
                        u.name AS other_name, u.role AS other_role,
                        (SELECT message FROM chat_messages m WHERE m.conversation_id = c.id ORDER BY m.id DESC LIMIT 1) AS last_message,
+                       (SELECT created_at FROM chat_messages m WHERE m.conversation_id = c.id ORDER BY m.id DESC LIMIT 1) AS last_message_time,
                        (SELECT COUNT(*) FROM chat_messages m WHERE m.conversation_id = c.id AND m.sender_id != ? AND m.is_read = 0) AS unread
                 FROM conversations c
                 JOIN users u ON u.id = c.patient_id
@@ -107,41 +126,54 @@ try {
             ");
             $stmt->execute([$userId, $userId]);
         }
-        jsonOut(['ok' => true, 'conversations' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        jsonOut(['ok' => true, 'conversations' => $stmt->fetchAll(PDO::FETCH_ASSOC), 'me' => $userId, 'role' => $role]);
     }
 
-    // Get messages (optionally only newer than after_id)
+    // Full message history (+ incremental after_id)
     if ($action === 'messages') {
         $convId = (int)($_GET['conversation_id'] ?? $_POST['conversation_id'] ?? 0);
         $afterId = (int)($_GET['after_id'] ?? $_POST['after_id'] ?? 0);
         $conv = userCanAccess($conn, $convId, $userId);
         if (!$conv) jsonOut(['ok' => false, 'error' => 'Chat not found'], 404);
 
-        // Mark read
-        $conn->prepare('UPDATE chat_messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ?')
-             ->execute([$convId, $userId]);
+        // Mark incoming as read (enables read receipts for the other person)
+        markConversationRead($conn, $convId, $userId);
 
         if ($afterId > 0) {
             $m = $conn->prepare("
-                SELECT m.id, m.conversation_id, m.sender_id, m.message, m.created_at, u.name AS sender_name
+                SELECT m.id, m.conversation_id, m.sender_id, m.message, m.is_read, m.read_at, m.created_at,
+                       u.name AS sender_name
                 FROM chat_messages m
                 JOIN users u ON u.id = m.sender_id
                 WHERE m.conversation_id = ? AND m.id > ?
                 ORDER BY m.id ASC
-                LIMIT 100
+                LIMIT 200
             ");
             $m->execute([$convId, $afterId]);
         } else {
             $m = $conn->prepare("
-                SELECT m.id, m.conversation_id, m.sender_id, m.message, m.created_at, u.name AS sender_name
+                SELECT m.id, m.conversation_id, m.sender_id, m.message, m.is_read, m.read_at, m.created_at,
+                       u.name AS sender_name
                 FROM chat_messages m
                 JOIN users u ON u.id = m.sender_id
                 WHERE m.conversation_id = ?
                 ORDER BY m.id ASC
-                LIMIT 300
+                LIMIT 500
             ");
             $m->execute([$convId]);
         }
+
+        // Also return receipt updates for older own messages (so Seen appears without reload of full history)
+        $receipts = [];
+        try {
+            $r = $conn->prepare("
+                SELECT id, is_read, read_at FROM chat_messages
+                WHERE conversation_id = ? AND sender_id = ? AND is_read = 1
+                ORDER BY id DESC LIMIT 100
+            ");
+            $r->execute([$convId, $userId]);
+            $receipts = $r->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {}
 
         $otherId = ((int)$conv['patient_id'] === $userId) ? (int)$conv['provider_id'] : (int)$conv['patient_id'];
         $on = $conn->prepare('SELECT name, role FROM users WHERE id = ? LIMIT 1');
@@ -151,11 +183,22 @@ try {
         jsonOut([
             'ok' => true,
             'messages' => $m->fetchAll(PDO::FETCH_ASSOC),
+            'receipts' => $receipts,
             'other_name' => $other['name'],
             'other_role' => $other['role'],
             'conversation_id' => $convId,
             'me' => $userId,
+            'history_count' => null,
         ]);
+    }
+
+    // Explicit mark read
+    if ($action === 'mark_read' && $method === 'POST') {
+        $convId = (int)($_POST['conversation_id'] ?? 0);
+        $conv = userCanAccess($conn, $convId, $userId);
+        if (!$conv) jsonOut(['ok' => false, 'error' => 'Chat not found'], 404);
+        markConversationRead($conn, $convId, $userId);
+        jsonOut(['ok' => true]);
     }
 
     // Send message
@@ -173,11 +216,16 @@ try {
         $msgId = (int)$conn->lastInsertId();
         $conn->prepare('UPDATE conversations SET last_message_at = NOW() WHERE id = ?')->execute([$convId]);
 
+        // Notify the other party so doctor sees patient messages (and vice versa)
         try {
             $otherId = ((int)$conv['patient_id'] === $userId) ? (int)$conv['provider_id'] : (int)$conv['patient_id'];
             $conn->prepare("INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
                             VALUES (?, 'chat', 'New message', ?, ?, 0, NOW())")
-                 ->execute([$otherId, $userName . ' sent you a message.', 'dashboard/messages.php?c=' . $convId]);
+                 ->execute([
+                     $otherId,
+                     $userName . ': ' . mb_substr($text, 0, 80),
+                     'dashboard/messages.php?c=' . $convId
+                 ]);
         } catch (Exception $e) {}
 
         jsonOut([
@@ -187,33 +235,61 @@ try {
                 'conversation_id' => $convId,
                 'sender_id' => $userId,
                 'message' => $text,
+                'is_read' => 0,
+                'read_at' => null,
                 'created_at' => date('Y-m-d H:i:s'),
                 'sender_name' => $userName,
             ],
         ]);
     }
 
-    // Start conversation (patient)
+    // Patient starts chat with doctor — doctor is always provider_id so they see it
     if ($action === 'start' && $method === 'POST') {
-        if ($role !== 'patient') jsonOut(['ok' => false, 'error' => 'Only patients can start chats'], 403);
+        if ($role !== 'patient') jsonOut(['ok' => false, 'error' => 'Only patients can start chats from profile'], 403);
         $providerId = (int)($_POST['provider_id'] ?? 0);
         if ($providerId <= 0) jsonOut(['ok' => false, 'error' => 'Choose a provider'], 400);
+        if ($providerId === $userId) jsonOut(['ok' => false, 'error' => 'Invalid provider'], 400);
 
-        $p = $conn->prepare("SELECT id FROM users WHERE id = ? AND role IN ('doctor','hospital') LIMIT 1");
+        $p = $conn->prepare("SELECT id, name FROM users WHERE id = ? AND role IN ('doctor','hospital') LIMIT 1");
         $p->execute([$providerId]);
-        if (!$p->fetch()) jsonOut(['ok' => false, 'error' => 'Provider not found'], 404);
+        $provider = $p->fetch(PDO::FETCH_ASSOC);
+        if (!$provider) jsonOut(['ok' => false, 'error' => 'Provider not found'], 404);
 
         $stmt = $conn->prepare('SELECT id FROM conversations WHERE patient_id = ? AND provider_id = ? LIMIT 1');
         $stmt->execute([$userId, $providerId]);
-        $existing = $stmt->fetch();
-        if ($existing) jsonOut(['ok' => true, 'conversation_id' => (int)$existing['id']]);
+        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($existing) {
+            jsonOut(['ok' => true, 'conversation_id' => (int)$existing['id'], 'created' => false]);
+        }
 
         $conn->prepare('INSERT INTO conversations (patient_id, provider_id, created_at, last_message_at) VALUES (?, ?, NOW(), NOW())')
              ->execute([$userId, $providerId]);
-        jsonOut(['ok' => true, 'conversation_id' => (int)$conn->lastInsertId()]);
+        $newId = (int)$conn->lastInsertId();
+
+        // System-style first notice so doctor sees the thread even before first message
+        try {
+            $conn->prepare("INSERT INTO chat_messages (conversation_id, sender_id, message, is_read, created_at)
+                            VALUES (?, ?, ?, 0, NOW())")
+                 ->execute([
+                     $newId,
+                     $userId,
+                     '👋 Hi Dr. ' . $provider['name'] . ', I would like to chat with you on Care Connect.'
+                 ]);
+        } catch (Exception $e) {}
+
+        try {
+            $conn->prepare("INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
+                            VALUES (?, 'chat', 'New patient chat', ?, ?, 0, NOW())")
+                 ->execute([
+                     $providerId,
+                     $userName . ' started a chat with you.',
+                     'dashboard/messages.php?c=' . $newId
+                 ]);
+        } catch (Exception $e) {}
+
+        jsonOut(['ok' => true, 'conversation_id' => $newId, 'created' => true]);
     }
 
-    // Providers list for patients
     if ($action === 'providers') {
         try {
             $providers = $conn->query("
