@@ -10,7 +10,9 @@
   <base href="/">
   <style>
     .hero {
-      background: linear-gradient(135deg, rgba(30,181,58,0.92), rgba(0,0,205,0.92)), url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+      background:
+        linear-gradient(135deg, rgba(15, 28, 58, 0.78), rgba(30, 181, 58, 0.55)),
+        url('/images/homepage-hero.jpg') center/cover no-repeat;
       min-height: 100dvh;
       display: flex;
       align-items: center;
@@ -99,19 +101,10 @@
       font-style: normal;
     }
 
-    /* Dark mode for testimonials */
-    [data-theme="dark"] .section h2 {
-      color: #f8fafc !important;
-    }
-    [data-theme="dark"] .testimonial {
-      background: #1e293b !important;
-    }
-    [data-theme="dark"] .testimonial p {
-      color: #e2e8f0 !important;
-    }
-    [data-theme="dark"] .testimonial .author {
-      color: #f8fafc !important;
-    }
+    [data-theme="dark"] .section h2 { color: #f8fafc !important; }
+    [data-theme="dark"] .testimonial { background: #1e293b !important; }
+    [data-theme="dark"] .testimonial p { color: #e2e8f0 !important; }
+    [data-theme="dark"] .testimonial .author { color: #f8fafc !important; }
   </style>
 </head>
 <body>
