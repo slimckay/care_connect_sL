@@ -29,7 +29,7 @@
 
     .typewriter {
       font-family: 'Playfair Display', serif;
-      font-size: 3.5rem;
+      font-size: 3.2rem;
       font-weight: 700;
       color: #fff;
       white-space: nowrap;
@@ -44,6 +44,7 @@
       margin-left: 4px;
       animation: blink 0.7s step-end infinite;
     }
+
     @keyframes blink {
       from, to { opacity: 1; }
       50% { opacity: 0; }
@@ -51,24 +52,20 @@
 
     .subtitle {
       color: rgba(255,255,255,0.6);
-      font-size: 1.1rem;
-      margin-top: 12px;
+      font-size: 1.05rem;
+      margin-top: 10px;
       letter-spacing: 0.1em;
-      animation: fadeUp 1.2s ease 2.8s forwards;
-      opacity: 0;
     }
 
     .loading-dots {
       display: flex;
       gap: 10px;
-      margin-top: 30px;
-      animation: fadeUp 1.2s ease 3.1s forwards;
-      opacity: 0;
+      margin-top: 25px;
     }
 
     .loading-dots span {
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       display: inline-block;
       animation: bounce-dot 1.4s infinite both;
@@ -79,28 +76,17 @@
       40% { transform: scale(1); opacity: 1; }
     }
 
-    @keyframes fadeUp {
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Hero Section */
+    /* Hero Section - Mobile Friendly */
     .hero {
       background: 
         linear-gradient(135deg, rgba(30,181,58,0.92) 0%, rgba(255,255,255,0.25) 40%, rgba(0,0,205,0.92) 100%),
         url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
       position: relative;
-      min-height: 92vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       color: white;
-    }
-
-    .hero::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at 30% 50%, rgba(30,181,58,0.08) 0%, transparent 60%);
-      pointer-events: none;
+      padding-top: 60px;
     }
 
     .hero-content {
@@ -108,119 +94,111 @@
       z-index: 2;
       max-width: 860px;
       margin: 0 auto;
-      padding: 80px 24px;
+      padding: 40px 20px;
       text-align: center;
-    }
-
-    .hero-badge {
-      display: inline-block;
-      background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(10px);
-      padding: 8px 24px;
-      border-radius: 50px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 20px;
-      border: 1px solid rgba(255,255,255,0.2);
     }
 
     .hero-title {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(2.8rem, 6vw, 4.8rem);
-      line-height: 1.05;
-      margin-bottom: 20px;
-      text-shadow: 0 4px 30px rgba(0,0,0,0.3);
+      font-size: clamp(2.4rem, 7vw, 4.2rem);
+      line-height: 1.1;
+      margin-bottom: 16px;
     }
 
     .hero-sub {
-      font-size: 1.25rem;
-      max-width: 680px;
-      margin: 0 auto 40px;
+      font-size: 1.1rem;
+      max-width: 620px;
+      margin: 0 auto 30px;
       opacity: 0.95;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.2);
     }
 
     .search-box {
       display: flex;
-      max-width: 620px;
-      margin: 0 auto 30px;
+      flex-direction: column;
+      max-width: 100%;
+      margin: 0 auto 25px;
       background: rgba(255,255,255,0.95);
-      border-radius: 60px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      border-radius: 16px;
       overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    @media (min-width: 600px) {
+      .search-box {
+        flex-direction: row;
+        border-radius: 60px;
+      }
     }
 
     .search-box input {
       flex: 1;
       border: none;
-      padding: 18px 28px;
-      font-size: 1.05rem;
-      color: #1F2937;
+      padding: 16px 24px;
+      font-size: 1rem;
     }
 
     .btn-search {
       background: linear-gradient(135deg, #1EB53A, #0000CD);
       color: white;
       border: none;
-      padding: 0 36px;
+      padding: 16px 32px;
       font-weight: 700;
-      font-size: 1.05rem;
+      font-size: 1rem;
       cursor: pointer;
-      transition: all 0.3s;
     }
 
     .trust-badges {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 40px;
+      gap: 10px;
+      margin-bottom: 30px;
     }
 
     .trust-badge {
       background: rgba(255,255,255,0.15);
       backdrop-filter: blur(8px);
-      padding: 8px 20px;
+      padding: 8px 16px;
       border-radius: 50px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       display: flex;
       align-items: center;
-      gap: 8px;
-      border: 1px solid rgba(255,255,255,0.2);
+      gap: 6px;
     }
 
     .hero-stats {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      max-width: 900px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      max-width: 100%;
       margin: 0 auto;
+    }
+
+    @media (min-width: 700px) {
+      .hero-stats {
+        grid-template-columns: repeat(4, 1fr);
+      }
     }
 
     .stat {
       background: rgba(255,255,255,0.12);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 16px;
-      padding: 20px 16px;
+      border-radius: 14px;
+      padding: 16px 12px;
       text-align: center;
     }
 
     .stat-number {
-      font-size: 2.1rem;
+      font-size: 1.8rem;
       font-weight: 700;
       display: block;
     }
 
     .stat-label {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       opacity: 0.9;
       margin-top: 4px;
-    }
-
-    @media (max-width: 768px) {
-      .hero-stats { grid-template-columns: repeat(2, 1fr); }
-      .hero-title { font-size: 2.6rem; }
     }
   </style>
 </head>
@@ -259,11 +237,19 @@
 <section class="hero">
   <div class="hero-content">
     <div class="hero-badge">🇸🇱 Sierra Leone's Home-Based Care Platform</div>
-    <h1 class="hero-title">Bringing quality care to every community<br><span style="color:#E0F2FE;">when it is needed most</span></h1>
-    <p class="hero-sub">Care Connect makes it easy for families, health workers, and clinics to request referrals, book urgent home visits, and coordinate local care across Sierra Leone.</p>
+    
+    <h1 class="hero-title">
+      Bringing quality care to every community<br>
+      <span style="color:#E0F2FE;">when it is needed most</span>
+    </h1>
+    
+    <p class="hero-sub">
+      Care Connect makes it easy for families, health workers, and clinics to request referrals, 
+      book urgent home visits, and coordinate local care across Sierra Leone.
+    </p>
 
     <div class="search-box">
-      <input type="text" id="heroSearch" placeholder="🔍 Search: referral, home visit, clinic...">
+      <input type="text" id="heroSearch" placeholder="🔍 Search referrals or clinics...">
       <button class="btn-search" id="searchBtn">Find Help Now</button>
     </div>
 
@@ -295,98 +281,16 @@
   </div>
 </section>
 
-<!-- Wave Divider -->
-<div style="margin:0;height:60px;overflow:hidden;">
-  <svg viewBox="0 0 1440 60" preserveAspectRatio="none" style="display:block;width:100%;height:60px;">
-    <path d="M0,20 Q360,60 720,20 Q1080,-20 1440,20 L1440,60 L0,60 Z" fill="rgba(255,255,255,0.65)"/>
+<!-- Wave -->
+<div style="margin:0;height:50px;overflow:hidden;">
+  <svg viewBox="0 0 1440 50" preserveAspectRatio="none" style="display:block;width:100%;height:50px;">
+    <path d="M0,15 Q360,50 720,15 Q1080,-20 1440,15 L1440,50 L0,50 Z" fill="rgba(255,255,255,0.7)"/>
   </svg>
 </div>
 
-<!-- Main Content -->
-<main class="page-content" style="padding-top:20px;">
-
-  <section>
-    <div class="section-header">
-      <span class="subtitle">✨ Simple Process</span>
-      <h2>How Care Connect Works</h2>
-      <p>Patients, caregivers, and community workers can request referrals and connect with clinics in just a few steps.</p>
-    </div>
-
-    <div class="feature-grid-cute">
-      <div class="feature-item-cute">
-        <div class="icon-wrapper">📝</div>
-        <h3>1. Submit Referral</h3>
-        <p>Fill in patient details and describe the medical condition. It takes just 2 minutes.</p>
-      </div>
-      <div class="feature-item-cute">
-        <div class="icon-wrapper">🔄</div>
-        <h3>2. Get Matched</h3>
-        <p>Our team reviews and connects you with the right healthcare provider.</p>
-      </div>
-      <div class="feature-item-cute">
-        <div class="icon-wrapper">❤️</div>
-        <h3>3. Receive Care</h3>
-        <p>Get the care you need, with follow-up support from our community health workers.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="site-banner" style="margin-top:50px;">
-    <div class="banner-grid">
-      <div>
-        <span class="badge-cute heart">Free Service</span>
-        <h2>Referral support made simple</h2>
-        <p>Submit patient details once and reach nurses, doctors, clinics, and community health workers through one trusted platform.</p>
-        <div class="page-actions" style="margin-top:20px;">
-          <a href="pages/referral.html" class="btn-primary">Submit a Referral</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<!-- Improved Footer with Clear Legal Links -->
-<footer class="site-footer">
-  <div class="footer-grid container">
-    <div>
-      <a href="index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
-      <p>Home-based care referrals and clinic coordination across Sierra Leone.</p>
-    </div>
-    
-    <div>
-      <h3>Explore</h3>
-      <ul class="footer-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="pages/doctors.php">Find Care</a></li>
-        <li><a href="pages/hospitals.html">Clinics</a></li>
-        <li><a href="pages/referral.html">Referrals</a></li>
-        <li><a href="ai-chat.php">AI Assistant</a></li>
-      </ul>
-    </div>
-
-    <div>
-      <h3>Legal</h3>
-      <ul class="footer-links">
-        <li><a href="terms.html">Terms of Service</a></li>
-        <li><a href="privacy.html">Privacy Policy</a></li>
-        <li><a href="faq.html">FAQ</a></li>
-      </ul>
-    </div>
-
-    <div>
-      <h3>Contact</h3>
-      <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
-      <p><a href="tel:+23276000000">+232 76 000 000</a></p>
-    </div>
-  </div>
-
-  <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved. Made with ❤️ in Sierra Leone</p>
-</footer>
-
 <script src="/js/main.js"></script>
 <script>
-  function typeWriter(element, text, speed = 105) {
+  function typeWriter(element, text, speed = 100) {
     let i = 0;
     element.innerHTML = '';
     const cursor = document.createElement('span');
@@ -407,11 +311,11 @@
     const splash = document.getElementById('splash');
     const typewriterEl = document.getElementById('typewriter-text');
 
-    typeWriter(typewriterEl, 'CareConnect SL', 100);
+    typeWriter(typewriterEl, 'CareConnect SL', 95);
 
     setTimeout(() => {
       splash.classList.add('hidden');
-    }, 3400);
+    }, 3200);
   });
 </script>
 </body>
