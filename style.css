@@ -76,8 +76,8 @@
   /* Dark Mode Variables */
   --dark-bg: #0f172a;
   --dark-surface: #1e293b;
-  --dark-text: #e2e8f0;
-  --dark-muted: #94a3b8;
+  --dark-text: #f1f5f9;
+  --dark-muted: #cbd5e1;
   --dark-border: #334155;
 }
 
@@ -101,6 +101,7 @@
   .btn-ghost:hover { background: var(--primary); color: white; }
   input, select, textarea { background: var(--dark-surface); color: var(--dark-text); border-color: var(--dark-border); }
   .site-footer { background: #020617; }
+  h1, h2, h3 { color: #f8fafc; }
 }
 
 /* ============================================
@@ -897,4 +898,33 @@ a.btn-ghost,
 .dark-toggle:hover {
   background: var(--primary);
   color: white;
+}
+
+/* Improved Readability */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3 {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+p, li, span {
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+[data-theme="dark"] p,
+[data-theme="dark"] li {
+  color: #e2e8f0;
 }
