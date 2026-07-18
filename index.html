@@ -8,6 +8,81 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
   <base href="/">
+  <style>
+    .hero {
+      background: linear-gradient(135deg, rgba(30,181,58,0.92), rgba(0,0,205,0.92)), url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      color: white;
+      position: relative;
+    }
+    .hero-content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.6rem, 7vw, 4.5rem);
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .search-box {
+      display: flex;
+      flex-direction: column;
+      max-width: 620px;
+      margin: 0 auto 30px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    @media (min-width: 600px) {
+      .search-box { flex-direction: row; border-radius: 60px; }
+    }
+    .search-box input { flex: 1; border: none; padding: 16px 24px; font-size: 1rem; }
+    .btn-search {
+      background: linear-gradient(135deg, #1EB53A, #0000CD);
+      color: white;
+      padding: 16px 32px;
+      font-weight: 700;
+      border: none;
+    }
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    @media (min-width: 700px) {
+      .hero-stats { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat {
+      background: rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 16px 12px;
+      text-align: center;
+    }
+    .stat-number { font-size: 1.8rem; font-weight: 700; display: block; }
+    .stat-label { font-size: 0.8rem; opacity: 0.9; }
+
+    .section {
+      max-width: 1100px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+    .testimonial {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+  </style>
 </head>
 <body>
 
@@ -72,23 +147,23 @@
 </section>
 
 <!-- Testimonials -->
-<section style="max-width:1100px; margin:60px auto; padding:0 20px;">
+<section class="section">
   <h2 style="text-align:center; margin-bottom:40px;">What People Are Saying</h2>
 
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:24px;">
     <div class="testimonial">
-      <p style="font-style:italic; color:#334155;">"Care Connect helped me get my mother to a specialist in Freetown within 24 hours. The process was simple and free."</p>
-      <p style="margin-top:16px; font-weight:600;">— Mariama Sesay, Western Area</p>
+      <p style="font-style:italic; color:#334155;">&ldquo;Care Connect helped me get my mother to a specialist in Freetown within 24 hours. The process was simple and free.&rdquo;</p>
+      <p style="margin-top:16px; font-weight:600;">&mdash; Mariama Sesay, Western Area</p>
     </div>
 
     <div class="testimonial">
-      <p style="font-style:italic; color:#334155;">"As a community health worker, this platform has made referring patients so much easier. I can now track my referrals properly."</p>
-      <p style="margin-top:16px; font-weight:600;">— Joseph Koroma, Bo District</p>
+      <p style="font-style:italic; color:#334155;">&ldquo;As a community health worker, this platform has made referring patients so much easier. I can now track my referrals properly.&rdquo;</p>
+      <p style="margin-top:16px; font-weight:600;">&mdash; Joseph Koroma, Bo District</p>
     </div>
 
     <div class="testimonial">
-      <p style="font-style:italic; color:#334155;">"I was able to get verified quickly and now receive referrals regularly. This has helped grow my small clinic."</p>
-      <p style="margin-top:16px; font-weight:600;">— Dr. Aminata Kamara, Kenema</p>
+      <p style="font-style:italic; color:#334155;">&ldquo;I was able to get verified quickly and now receive referrals regularly. This has helped grow my small clinic.&rdquo;</p>
+      <p style="margin-top:16px; font-weight:600;">&mdash; Dr. Aminata Kamara, Kenema</p>
     </div>
   </div>
 </section>
