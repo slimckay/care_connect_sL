@@ -1,5 +1,5 @@
 <?php
-// Provider Registration Form
+// Provider Registration with Document Upload
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -9,51 +9,6 @@
   <title>Provider Registration — Care Connect SL</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <base href="/">
-  <style>
-    .form-container {
-      max-width: 720px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
-    .form-card {
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-      padding: 40px 36px;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      width: 100%;
-      padding: 13px 16px;
-      border: 2px solid #E5E7EB;
-      border-radius: 10px;
-      font-size: 1rem;
-    }
-    .form-group textarea {
-      min-height: 100px;
-    }
-    .btn-primary {
-      width: 100%;
-      padding: 15px;
-      font-size: 1.1rem;
-      margin-top: 10px;
-    }
-    @media (max-width: 600px) {
-      .form-card {
-        padding: 28px 20px;
-      }
-    }
-  </style>
 </head>
 <body>
 
@@ -63,12 +18,12 @@
   </div>
 </header>
 
-<div class="form-container">
-  <div class="form-card">
+<div class="form-container" style="max-width:720px; margin:40px auto; padding:0 20px;">
+  <div class="form-card" style="background:#fff; padding:40px; border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,0.08);">
     <h1 style="text-align:center; margin-bottom:8px;">Join as a Provider</h1>
-    <p style="text-align:center; color:#64748B; margin-bottom:30px;">Register as a Doctor or Clinic</p>
+    <p style="text-align:center; color:#64748B; margin-bottom:30px;">Register as Doctor or Clinic (Verification Required)</p>
 
-    <form method="POST" action="provider-registration.php">
+    <form method="POST" action="provider-registration.php" enctype="multipart/form-data">
       <div class="form-group">
         <label>Full Name / Clinic Name</label>
         <input type="text" name="name" required>
@@ -85,17 +40,16 @@
       </div>
 
       <div class="form-group">
-        <label>I am registering as</label>
+        <label>Registering as</label>
         <select name="role" required>
-          <option value="">Select</option>
           <option value="doctor">Doctor</option>
           <option value="hospital">Clinic / Hospital</option>
         </select>
       </div>
 
       <div class="form-group">
-        <label>Specialty / Services Offered</label>
-        <input type="text" name="specialty" placeholder="e.g. General Medicine, Maternal Health">
+        <label>Specialty / Services</label>
+        <input type="text" name="specialty" placeholder="e.g. General Medicine">
       </div>
 
       <div class="form-group">
@@ -104,17 +58,17 @@
       </div>
 
       <div class="form-group">
-        <label>Clinic / Hospital Name (if applicable)</label>
-        <input type="text" name="clinic_name">
+        <label>Upload Verification Documents (License, ID, Certificate)</label>
+        <input type="file" name="documents[]" multiple required>
+        <small style="color:#64748B;">You can upload multiple files (PDF, JPG, PNG)</small>
       </div>
 
-      <div class="form-group">
-        <label>Clinic Address</label>
-        <textarea name="clinic_address"></textarea>
-      </div>
-
-      <button type="submit" class="btn-primary">Submit Application</button>
+      <button type="submit" class="btn-primary">Submit for Verification</button>
     </form>
+
+    <p style="text-align:center; margin-top:20px; color:#64748B; font-size:0.9rem;">
+      Your application will be reviewed within 48 hours.
+    </p>
   </div>
 </div>
 
