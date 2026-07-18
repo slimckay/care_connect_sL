@@ -10,7 +10,7 @@ if (!isset($_SESSION['admin_logged_in'])) {
 
 require_once '../db.php';
 
-// Handle approval/rejection + email
+// Handle approval/rejection
 if (isset($_GET['action']) && isset($_GET['id'])) {
     $id = intval($_GET['id']);
     $action = $_GET['action'];
@@ -41,7 +41,6 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     exit;
 }
 
-// Get pending providers with details
 $pending = $conn->query("
     SELECT p.*, u.name, u.email 
     FROM provider_profiles p 
@@ -65,40 +64,12 @@ $pending = $conn->query("
       box-shadow: 0 4px 20px rgba(0,0,0,0.06);
       border: 1px solid #e5e7eb;
     }
-    .provider-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .provider-info h3 {
-      margin: 0;
-      font-size: 1.3rem;
-    }
-    .provider-info p {
-      margin: 4px 0 0;
-      color: #64748B;
-    }
-    .detail-row {
-      display: flex;
-      gap: 30px;
-      margin: 12px 0;
-      flex-wrap: wrap;
-    }
-    .detail-item {
-      min-width: 200px;
-    }
-    .detail-item label {
-      font-size: 0.8rem;
-      color: #94A3B8;
-      display: block;
-    }
-    .action-buttons {
-      display: flex;
-      gap: 12px;
-      margin-top: 20px;
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #1EB53A;
+      text-decoration: none;
+      font-weight: 500;
     }
   </style>
 </head>
@@ -111,6 +82,8 @@ $pending = $conn->query("
 </header>
 
 <main style="max-width:1100px; margin:40px auto; padding:0 20px;">
+  <a href="admin-dashboard.php" class="back-btn">← Back to Dashboard</a>
+
   <h1 style="margin-bottom:30px;">Pending Provider Verifications</h1>
 
   <?php if (empty($pending)): ?>
