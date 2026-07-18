@@ -1,4 +1,4 @@
-// Reusable Dark Mode Script + mobile logout helper
+// Reusable Dark Mode Script + mobile logout helper + notify loader
 (function() {
   const html = document.documentElement;
 
@@ -7,7 +7,6 @@
     localStorage.setItem('theme', theme);
   }
 
-  // Load saved theme
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme) {
     html.setAttribute('data-theme', savedTheme);
@@ -15,14 +14,12 @@
     html.setAttribute('data-theme', 'dark');
   }
 
-  // Toggle function (can be called from buttons)
   window.toggleDarkMode = function() {
     const current = html.getAttribute('data-theme');
     const newTheme = current === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
   };
 
-  // Optional: Add keyboard shortcut (Ctrl/Cmd + Shift + D)
   document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
       e.preventDefault();
@@ -41,7 +38,6 @@
     var style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = [
-      '/* Keep logout visible in header on phones */',
       '@media (max-width: 768px) {',
       '  .nav-actions a[href*="logout"],',
       '  .nav-actions .btn-logout {',
@@ -87,22 +83,11 @@
       '    text-decoration: none !important;',
       '    box-shadow: 0 6px 16px rgba(220,38,38,0.28);',
       '  }',
-      '  body.has-mobile-logout {',
-      '    padding-bottom: 78px !important;',
-      '  }',
-      '  [data-theme="dark"] .mobile-logout-bar {',
-      '    background: rgba(15,23,42,0.96);',
-      '    border-top-color: #334155;',
-      '  }',
-      '  [data-theme="dark"] .nav-actions a[href*="logout"] {',
-      '    background: #450a0a !important;',
-      '    color: #FECACA !important;',
-      '    border-color: #F87171 !important;',
-      '  }',
+      '  body.has-mobile-logout { padding-bottom: 78px !important; }',
+      '  [data-theme="dark"] .mobile-logout-bar { background: rgba(15,23,42,0.96); border-top-color: #334155; }',
+      '  [data-theme="dark"] .nav-actions a[href*="logout"] { background: #450a0a !important; color: #FECACA !important; border-color: #F87171 !important; }',
       '}',
-      '@media (min-width: 769px) {',
-      '  .mobile-logout-bar { display: none !important; }',
-      '}'
+      '@media (min-width: 769px) { .mobile-logout-bar { display: none !important; } }'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -128,12 +113,9 @@
       return;
     }
 
-    // Also label header logout clearly on mobile
     document.querySelectorAll('a[href*="logout"]').forEach(function (a) {
       if (!a.classList.contains('btn-logout')) a.classList.add('btn-logout');
-      if ((a.textContent || '').trim().toLowerCase() === 'logout') {
-        a.textContent = 'Log out';
-      }
+      if ((a.textContent || '').trim().toLowerCase() === 'logout') a.textContent = 'Log out';
     });
 
     if (existing) return;
@@ -148,14 +130,22 @@
     document.body.classList.add('has-mobile-logout');
   }
 
-  function boot() {
-    ensureBar();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
+  function boot() { ensureBar(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
   window.addEventListener('resize', ensureBar);
+})();
+
+// ===== Load phone popup notifications on app pages =====
+(function () {
+  var p = location.pathname || '';
+  if (!/\/(dashboard|admin)\//.test(p) && !/messages\.php/.test(p)) return;
+  if (document.getElementById('cc-push-notify')) return;
+  var s = document.createElement('script');
+  s.id = 'cc-push-notify';
+  s.src = (p.indexOf('/dashboard/') !== -1 || p.indexOf('/admin/') !== -1)
+    ? '../js/push-notify.js'
+    : '/js/push-notify.js';
+  s.defer = true;
+  document.head.appendChild(s);
 })();
