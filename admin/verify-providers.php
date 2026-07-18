@@ -43,7 +43,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
 
 // Get pending providers with details
 $pending = $conn->query("
-    SELECT p.*, u.name, u.email, u.phone 
+    SELECT p.*, u.name, u.email 
     FROM provider_profiles p 
     JOIN users u ON p.user_id = u.id 
     WHERE p.verification_status = 'pending'
@@ -121,7 +121,7 @@ $pending = $conn->query("
         <div class="provider-header">
           <div class="provider-info">
             <h3><?= htmlspecialchars($p['name']) ?></h3>
-            <p><?= htmlspecialchars($p['email']) ?> • <?= htmlspecialchars($p['phone'] ?? 'No phone') ?></p>
+            <p><?= htmlspecialchars($p['email']) ?></p>
           </div>
           <div style="text-align:right;">
             <span style="background:#fefce8; color:#854d0e; padding:4px 12px; border-radius:20px; font-size:0.85rem;">
