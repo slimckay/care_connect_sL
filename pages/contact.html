@@ -1,3 +1,66 @@
+<?php
+// Contact form processing with error handling
+session_start();
+require_once __DIR__ . '/../db.php';
+
+$success = false;
+$errors = [];
+$formData = ['name' => '', 'email' => '', 'subject' => '', 'message' => ''];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Sanitize inputs
+    $formData['name'] = trim($_POST['name'] ?? '');
+    $formData['email'] = trim($_POST['email'] ?? '');
+    $formData['subject'] = trim($_POST['subject'] ?? '');
+    $formData['message'] = trim($_POST['message'] ?? '');
+
+    // Validation
+    if (empty($formData['name'])) {
+        $errors[] = 'Name is required.';
+    } elseif (strlen($formData['name']) < 2) {
+        $errors[] = 'Name must be at least 2 characters.';
+    }
+
+    if (empty($formData['email'])) {
+        $errors[] = 'Email is required.';
+    } elseif (!filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Please enter a valid email address.';
+    }
+
+    if (empty($formData['subject'])) {
+        $errors[] = 'Subject is required.';
+    }
+
+    if (empty($formData['message'])) {
+        $errors[] = 'Message is required.';
+    } elseif (strlen($formData['message']) < 10) {
+        $errors[] = 'Message must be at least 10 characters.';
+    }
+
+    // If no errors, save to database
+    if (empty($errors)) {
+        try {
+            $stmt = $conn->prepare("
+                INSERT INTO contact_messages (name, email, subject, message, created_at)
+                VALUES (?, ?, ?, ?, NOW())
+            ");
+            $stmt->execute([
+                $formData['name'],
+                $formData['email'],
+                $formData['subject'],
+                $formData['message']
+            ]);
+
+            $success = true;
+            // Clear form data after successful submission
+            $formData = ['name' => '', 'email' => '', 'subject' => '', 'message' => ''];
+        } catch (PDOException $e) {
+            error_log("Contact form error: " . $e->getMessage());
+            $errors[] = 'Something went wrong. Please try again later.';
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,6 +116,45 @@
       text-align: center;
       margin-top: 20px;
     }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1F2937;
+    }
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid #E5E7EB;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #1EB53A;
+      box-shadow: 0 0 0 4px rgba(30,181,58,0.1);
+      outline: none;
+    }
+    .error-box {
+      background: #FEE2E2;
+      color: #991B1B;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    .success-box {
+      background: #D1FAE5;
+      color: #065F46;
+      padding: 20px 24px;
+      border-radius: 16px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
   </style>
 </head>
 <body>
@@ -90,9 +192,18 @@
     </p>
   </section>
 
+  <!-- Success Message -->
+  <?php if ($success): ?>
+    <div style="max-width: 700px; margin: 40px auto 0; padding: 0 24px;">
+      <div class="success-box">
+        <h3 style="margin:0 0 8px 0; color:#065F46;">✅ Message Sent Successfully!</h3>
+        <p style="margin:0; color:#065F46;">Thank you! We'll get back to you within 24 hours.</p>
+      </div>
+    </div>
+  <?php endif; ?>
+
   <!-- Contact Cards -->
   <div class="contact-grid">
-    <!-- Office & Direct Contact -->
     <div class="contact-card">
       <h3>📍 Our Office</h3>
       <p><strong>Freetown, Sierra Leone</strong></p>
@@ -103,25 +214,58 @@
       <p style="color:#64748B; font-size:0.95rem;">We respond to emails within 24 hours.</p>
     </div>
 
-    <!-- Quick Help -->
     <div class="contact-card">
       <h3>💬 Need Help Fast?</h3>
       <p>Chat with our AI assistant 24/7 for instant guidance on referrals, symptoms, or how to use Care Connect.</p>
       <a href="/ai-chat.php" class="btn-primary btn-block">Chat with AI Now →</a>
     </div>
-
-    <!-- Submit Referral -->
-    <div class="contact-card">
-      <h3>📝 Submit a Referral</h3>
-      <p>Need to request a home visit or clinical referral for someone in your community?</p>
-      <a href="/pages/referral.html" class="btn-primary btn-block">Submit Referral Form →</a>
-    </div>
   </div>
 
-  <div style="text-align:center; margin: 60px 0 40px;">
-    <p style="color:#64748B; max-width:500px; margin:0 auto;">
-      For partnerships, media, or urgent matters, email us directly. We're happy to support community health initiatives across Sierra Leone.
-    </p>
+  <!-- Contact Form -->
+  <div style="max-width: 700px; margin: 60px auto; padding: 0 24px;">
+    <div class="auth-card" style="max-width: 100%;">
+      <h2 style="text-align:center; margin-bottom: 8px;">Send us a Message</h2>
+      <p style="text-align:center; color:#64748B; margin-bottom: 32px;">We'll respond within 24 hours</p>
+
+      <!-- Error Messages -->
+      <?php if (!empty($errors)): ?>
+        <div class="error-box">
+          <strong>Please fix the following:</strong>
+          <ul style="margin: 12px 0 0 20px; padding:0;">
+            <?php foreach ($errors as $error): ?>
+              <li><?= htmlspecialchars($error) ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php endif; ?>
+
+      <form method="POST" action="/pages/contact.html">
+        <div class="form-group">
+          <label for="name">Your Full Name</label>
+          <input type="text" id="name" name="name" 
+                 value="<?= htmlspecialchars($formData['name']) ?>" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" 
+                 value="<?= htmlspecialchars($formData['email']) ?>" required>
+        </div>
+
+        <div class="form-group">
+          <label for="subject">Subject</label>
+          <input type="text" id="subject" name="subject" 
+                 value="<?= htmlspecialchars($formData['subject']) ?>" required>
+        </div>
+
+        <div class="form-group">
+          <label for="message">Your Message</label>
+          <textarea id="message" name="message" rows="6" required><?= htmlspecialchars($formData['message']) ?></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary">Send Message</button>
+      </form>
+    </div>
   </div>
 </main>
 
