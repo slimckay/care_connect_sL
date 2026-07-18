@@ -3,20 +3,16 @@
  * Patient Dashboard - Care Connect SL
  */
 
-// Start session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../login.php');
     exit;
 }
 
-// Check if user is a patient
 if ($_SESSION['role'] !== 'patient') {
-    // Redirect based on actual role
     $role = $_SESSION['role'];
     switch($role) {
         case 'admin':
@@ -32,45 +28,55 @@ if ($_SESSION['role'] !== 'patient') {
     exit;
 }
 
-// Include database
 require_once '../db.php';
 
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 
-// Get patient statistics
+$totalReferrals = 0;
+$pendingReferrals = 0;
+$completedReferrals = 0;
+$inProgressReferrals = 0;
+$recentReferrals = [];
+
 try {
-    // Total referrals
     $stmt = $conn->prepare("SELECT COUNT(*) as total FROM referrals WHERE user_id = ?");
     $stmt->execute([$user_id]);
     $totalReferrals = $stmt->fetch()['total'] ?? 0;
 
-    // Pending referrals
     $stmt = $conn->prepare("SELECT COUNT(*) as pending FROM referrals WHERE user_id = ? AND status = 'pending'");
     $stmt->execute([$user_id]);
     $pendingReferrals = $stmt->fetch()['pending'] ?? 0;
 
-    // Completed referrals
     $stmt = $conn->prepare("SELECT COUNT(*) as completed FROM referrals WHERE user_id = ? AND status = 'completed'");
     $stmt->execute([$user_id]);
     $completedReferrals = $stmt->fetch()['completed'] ?? 0;
 
-    // In-progress referrals
     $stmt = $conn->prepare("SELECT COUNT(*) as in_progress FROM referrals WHERE user_id = ? AND status = 'in_progress'");
     $stmt->execute([$user_id]);
     $inProgressReferrals = $stmt->fetch()['in_progress'] ?? 0;
 
-    // Get recent referrals
-    $stmt = $conn->prepare("
-        SELECT id, patient_name, medical_condition, status, created_at 
-        FROM referrals 
-        WHERE user_id = ? 
-        ORDER BY created_at DESC 
-        LIMIT 5
-    ");
-    $stmt->execute([$user_id]);
-    $recentReferrals = $stmt->fetchAll();
-
+    try {
+        $stmt = $conn->prepare("
+            SELECT id, patient_name, condition, status, created_at
+            FROM referrals
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT 5
+        ");
+        $stmt->execute([$user_id]);
+        $recentReferrals = $stmt->fetchAll();
+    } catch (Exception $e) {
+        $stmt = $conn->prepare("
+            SELECT id, patient_name, medical_condition, status, created_at
+            FROM referrals
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT 5
+        ");
+        $stmt->execute([$user_id]);
+        $recentReferrals = $stmt->fetchAll();
+    }
 } catch (PDOException $e) {
     error_log("Patient dashboard error: " . $e->getMessage());
     $error = "Unable to load dashboard data.";
@@ -88,7 +94,6 @@ try {
 </head>
 <body>
 
-<!-- Preloader -->
 <div id="preloader" role="status" aria-label="Loading">
     <div class="pulse-ring"></div>
     <svg class="heartbeat-svg" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -97,7 +102,6 @@ try {
     <p class="preload-text">Care Connect SL</p>
 </div>
 
-<!-- Header -->
 <header role="banner">
     <div class="nav-inner">
         <a href="../index.html" class="logo" aria-label="Care Connect SL Home">
@@ -109,6 +113,7 @@ try {
                 <li><a href="../pages/doctors.php" role="menuitem">Find Care</a></li>
                 <li><a href="../pages/hospitals.html" role="menuitem">Clinics</a></li>
                 <li><a href="../pages/referral.html" role="menuitem">New Referral</a></li>
+                <li><a href="messages.php" role="menuitem">Messages</a></li>
             </ul>
         </nav>
         <div class="nav-actions">
@@ -118,10 +123,8 @@ try {
     </div>
 </header>
 
-<!-- Main Dashboard -->
 <main class="dashboard-main" role="main">
     <div class="dashboard-container">
-        <!-- Welcome Section -->
         <section class="dashboard-welcome">
             <div class="welcome-content">
                 <h1>Welcome back, <?php echo htmlspecialchars($user_name); ?>! 👋</h1>
@@ -129,11 +132,10 @@ try {
             </div>
             <div class="welcome-actions">
                 <a href="../pages/referral.html" class="btn-primary">➕ New Referral</a>
-                <a href="../pages/doctors.php" class="btn-ghost">🔍 Find Care</a>
+                <a href="messages.php" class="btn-ghost">💬 Messages</a>
             </div>
         </section>
 
-        <!-- Stats Cards -->
         <section class="stats-grid">
             <div class="stat-card stat-total">
                 <div class="stat-icon">📋</div>
@@ -165,24 +167,25 @@ try {
             </div>
         </section>
 
-        <!-- Recent Referrals -->
         <section class="dashboard-card">
             <div class="card-header">
                 <h2>📋 Recent Referrals</h2>
-                <a href="#" class="view-all">View All →</a>
             </div>
             <div class="card-body">
                 <?php if (!empty($recentReferrals)): ?>
                     <div class="referral-list">
                         <?php foreach ($recentReferrals as $referral): ?>
+                            <?php
+                              $cond = $referral['condition'] ?? ($referral['medical_condition'] ?? 'Not provided');
+                            ?>
                             <div class="referral-item">
                                 <div class="referral-info">
                                     <h4><?php echo htmlspecialchars($referral['patient_name']); ?></h4>
-                                    <p class="referral-condition"><?php echo htmlspecialchars(substr($referral['medical_condition'], 0, 60)) . '...'; ?></p>
+                                    <p class="referral-condition"><?php echo htmlspecialchars(mb_substr($cond, 0, 60)); ?><?php echo mb_strlen($cond) > 60 ? '...' : ''; ?></p>
                                     <span class="referral-date"><?php echo date('M d, Y', strtotime($referral['created_at'])); ?></span>
                                 </div>
                                 <div class="referral-status">
-                                    <span class="badge <?php echo $referral['status']; ?>">
+                                    <span class="badge <?php echo htmlspecialchars($referral['status']); ?>">
                                         <?php echo ucfirst(str_replace('_', ' ', $referral['status'])); ?>
                                     </span>
                                 </div>
@@ -198,7 +201,6 @@ try {
             </div>
         </section>
 
-        <!-- Quick Actions -->
         <section class="quick-actions">
             <h2>⚡ Quick Actions</h2>
             <div class="action-grid">
@@ -206,6 +208,11 @@ try {
                     <div class="action-icon">📝</div>
                     <h3>New Referral</h3>
                     <p>Submit a new healthcare referral</p>
+                </a>
+                <a href="messages.php" class="action-card">
+                    <div class="action-icon">💬</div>
+                    <h3>Messages</h3>
+                    <p>Chat with your doctor or clinic</p>
                 </a>
                 <a href="../pages/doctors.php" class="action-card">
                     <div class="action-icon">👨‍⚕️</div>
@@ -217,21 +224,15 @@ try {
                     <h3>Find a Clinic</h3>
                     <p>Locate partner clinics near you</p>
                 </a>
-                <a href="../profile.php" class="action-card">
-                    <div class="action-icon">👤</div>
-                    <h3>My Profile</h3>
-                    <p>Manage your personal information</p>
-                </a>
             </div>
         </section>
     </div>
 </main>
 
-<!-- Footer -->
 <footer class="site-footer" role="contentinfo">
     <div class="footer-grid container">
         <div>
-            <a href="../index.html" class="logo" aria-label="Care Connect SL Home">Care<span class="accent">Connect</span> SL</a>
+            <a href="../index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
             <p>Home-based care referrals and clinic coordination across Sierra Leone.</p>
         </div>
         <div>
@@ -239,7 +240,7 @@ try {
             <ul class="footer-links">
                 <li><a href="../index.html">Home</a></li>
                 <li><a href="../pages/referral.html">New Referral</a></li>
-                <li><a href="../privacy.html">Privacy Policy</a></li>
+                <li><a href="messages.php">Messages</a></li>
             </ul>
         </div>
         <div>
