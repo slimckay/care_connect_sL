@@ -79,18 +79,43 @@
         align-items: center;
       }
     }
-    .search-box input {
+
+    .search-box input,
+    .search-box input:focus,
+    .search-box input:active,
+    .search-box input:hover {
       flex: 1;
-      border: none;
-      background: transparent;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      background-color: transparent !important;
       padding: 16px 24px;
       font-size: 1rem;
-      color: #ffffff;
-      outline: none;
+      color: #ffffff !important;
+      caret-color: #ffffff;
+      -webkit-appearance: none;
+      appearance: none;
     }
     .search-box input::placeholder {
-      color: rgba(255,255,255,0.75);
+      color: rgba(255,255,255,0.75) !important;
+      opacity: 1;
     }
+
+    /* Kill grey/yellow autofill & focus fill */
+    .search-box input:-webkit-autofill,
+    .search-box input:-webkit-autofill:hover,
+    .search-box input:-webkit-autofill:focus,
+    .search-box input:-webkit-autofill:active {
+      -webkit-text-fill-color: #ffffff !important;
+      caret-color: #ffffff !important;
+      transition: background-color 99999s ease-in-out 0s;
+      box-shadow: 0 0 0 1000px transparent inset !important;
+      -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
     .btn-search {
       background: linear-gradient(135deg, #1EB53A, #0000CD);
       color: white;
@@ -197,10 +222,17 @@
       Care Connect makes it easy for families, health workers, and clinics to request referrals, book urgent home visits, and coordinate local care across Sierra Leone.
     </p>
 
-    <div class="search-box">
-      <input type="text" placeholder="🔍 Search referrals, doctors or clinics...">
-      <button class="btn-search">Find Help Now</button>
-    </div>
+    <form class="search-box" id="heroSearchForm" action="pages/doctors.php" method="get" role="search">
+      <input
+        type="search"
+        id="heroSearchInput"
+        name="q"
+        placeholder="🔍 Search referrals, doctors or clinics..."
+        autocomplete="off"
+        spellcheck="false"
+      >
+      <button type="submit" class="btn-search">Find Help Now</button>
+    </form>
 
     <div class="hero-pills">
       <span>✅ 4200+ Referrals</span>
@@ -285,11 +317,55 @@
     }
     typing();
   }
+
+  function runHeroSearch(query) {
+    const q = (query || '').trim().toLowerCase();
+
+    // Smart routing based on what the user typed
+    if (!q) {
+      window.location.href = 'pages/doctors.php';
+      return;
+    }
+
+    if (q.includes('referral') || q.includes('refer') || q.includes('submit')) {
+      window.location.href = 'pages/referral.html';
+      return;
+    }
+
+    if (q.includes('clinic') || q.includes('hospital') || q.includes('health centre') || q.includes('health center')) {
+      window.location.href = 'pages/hospitals.html';
+      return;
+    }
+
+    if (q.includes('ai') || q.includes('assistant') || q.includes('chat') || q.includes('help me')) {
+      window.location.href = 'ai-chat.php';
+      return;
+    }
+
+    if (q.includes('contact') || q.includes('call') || q.includes('phone')) {
+      window.location.href = 'pages/contact.html';
+      return;
+    }
+
+    // Default: Find Care with search query
+    window.location.href = 'pages/doctors.php?q=' + encodeURIComponent(query.trim());
+  }
+
   window.onload = function() {
     const splash = document.getElementById('splash');
     const typewriterEl = document.getElementById('typewriter-text');
     if (typewriterEl) typeWriter(typewriterEl, 'CareConnect SL', 90);
     setTimeout(() => { if (splash) splash.style.display = 'none'; }, 3400);
+
+    const form = document.getElementById('heroSearchForm');
+    const input = document.getElementById('heroSearchInput');
+
+    if (form && input) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        runHeroSearch(input.value);
+      });
+    }
   };
 </script>
 </body>
