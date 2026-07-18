@@ -12,7 +12,6 @@ require_once '../db.php';
 
 $user_id = $_SESSION['user_id'];
 
-// Get provider profile and verification status
 $stmt = $conn->prepare("
     SELECT p.*, u.name, u.email 
     FROM provider_profiles p 
@@ -38,15 +37,6 @@ $verificationStatus = $profile['verification_status'] ?? 'pending';
 <header>
   <div class="nav-inner">
     <a href="../index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
-    <nav>
-      <ul class="nav-links">
-        <li><a href="../index.html">Home</a></li>
-        <li><a href="../pages/referral.html">Referrals</a></li>
-      </ul>
-    </nav>
-    <div class="nav-actions">
-      <a href="../logout.php" class="btn-ghost">Logout</a>
-    </div>
   </div>
 </header>
 
@@ -56,13 +46,18 @@ $verificationStatus = $profile['verification_status'] ?? 'pending';
   <!-- Verification Status -->
   <div style="background:#fefce8; border-left:5px solid #eab308; padding:20px; border-radius:12px; margin:30px 0;">
     <h3 style="margin:0 0 8px 0;">Verification Status</h3>
+
     <?php if ($verificationStatus === 'verified'): ?>
       <p style="color:#16A34A; font-weight:600; margin:0;">✅ Verified — You can now receive referrals and appear publicly.</p>
+
     <?php elseif ($verificationStatus === 'rejected'): ?>
-      <p style="color:#DC2626; font-weight:600; margin:0;">❌ Verification Rejected. Please contact admin.</p>
+      <p style="color:#DC2626; font-weight:600; margin:0;">❌ Your application was rejected.</p>
+      <p style="margin:10px 0 0 0;">You can reapply with updated documents.</p>
+      <a href="reapply.php" class="btn-primary" style="margin-top:12px; display:inline-block; padding:10px 24px; text-decoration:none;">Reapply Now</a>
+
     <?php else: ?>
       <p style="color:#CA8A04; font-weight:600; margin:0;">⏳ Pending Verification — Your documents are under review.</p>
-      <p style="margin:8px 0 0 0; color:#64748B;">You will be notified once approved. You cannot receive referrals until verified.</p>
+      <p style="margin:8px 0 0 0; color:#64748B;">You will be notified once approved.</p>
     <?php endif; ?>
   </div>
 
