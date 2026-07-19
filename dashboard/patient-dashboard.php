@@ -38,6 +38,7 @@ $pendingReferrals = 0;
 $completedReferrals = 0;
 $inProgressReferrals = 0;
 $recentReferrals = [];
+$upcomingAppts = 0;
 
 try {
     $stmt = $conn->prepare("SELECT COUNT(*) as total FROM referrals WHERE user_id = ?");
@@ -59,23 +60,25 @@ try {
     try {
         $stmt = $conn->prepare("
             SELECT id, patient_name, `condition`, status, created_at
-            FROM referrals
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 5
+            FROM referrals WHERE user_id = ? ORDER BY created_at DESC LIMIT 5
         ");
         $stmt->execute([$user_id]);
         $recentReferrals = $stmt->fetchAll();
     } catch (Exception $e) {
         $stmt = $conn->prepare("
             SELECT id, patient_name, medical_condition, status, created_at
-            FROM referrals
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 5
+            FROM referrals WHERE user_id = ? ORDER BY created_at DESC LIMIT 5
         ");
         $stmt->execute([$user_id]);
         $recentReferrals = $stmt->fetchAll();
+    }
+
+    try {
+        $stmt = $conn->prepare("SELECT COUNT(*) AS c FROM appointments WHERE patient_id = ? AND status IN ('pending','confirmed') AND appointment_date >= CURDATE()");
+        $stmt->execute([$user_id]);
+        $upcomingAppts = (int)($stmt->fetch()['c'] ?? 0);
+    } catch (Exception $e) {
+        $upcomingAppts = 0;
     }
 } catch (PDOException $e) {
     error_log("Patient dashboard error: " . $e->getMessage());
@@ -110,7 +113,7 @@ try {
             <ul class="nav-links" role="menubar">
                 <li><a href="../index.html" role="menuitem">Home</a></li>
                 <li><a href="../pages/doctors.php" role="menuitem">Find Care</a></li>
-                <li><a href="../pages/hospitals.html" role="menuitem">Clinics</a></li>
+                <li><a href="../pages/appointment.php" role="menuitem">Book Visit</a></li>
                 <li><a href="../pages/referral.html" role="menuitem">New Referral</a></li>
                 <li><a href="messages.php" role="menuitem">Messages</a></li>
             </ul>
@@ -130,7 +133,8 @@ try {
                 <p>Here's an overview of your healthcare journey on Care Connect SL.</p>
             </div>
             <div class="welcome-actions">
-                <a href="../pages/referral.html" class="btn-primary">➕ New Referral</a>
+                <a href="../pages/appointment.php" class="btn-primary">📅 Book Visit</a>
+                <a href="../pages/referral.html" class="btn-ghost">➕ Referral</a>
                 <a href="messages.php" class="btn-ghost">💬 Messages</a>
             </div>
         </section>
@@ -151,10 +155,10 @@ try {
                 </div>
             </div>
             <div class="stat-card stat-progress">
-                <div class="stat-icon">🔄</div>
+                <div class="stat-icon">📅</div>
                 <div class="stat-info">
-                    <span class="stat-number"><?php echo $inProgressReferrals; ?></span>
-                    <span class="stat-label">In Progress</span>
+                    <span class="stat-number"><?php echo $upcomingAppts; ?></span>
+                    <span class="stat-label">Upcoming Visits</span>
                 </div>
             </div>
             <div class="stat-card stat-completed">
@@ -201,25 +205,25 @@ try {
         <section class="quick-actions">
             <h2>⚡ Quick Actions</h2>
             <div class="action-grid">
+                <a href="../pages/appointment.php" class="action-card">
+                    <div class="action-icon">📅</div>
+                    <h3>Book Visit</h3>
+                    <p>Home visit or clinic appointment</p>
+                </a>
+                <a href="my-appointments.php" class="action-card">
+                    <div class="action-icon">🗓️</div>
+                    <h3>My Appointments</h3>
+                    <p>Track upcoming and past visits</p>
+                </a>
                 <a href="../pages/referral.html" class="action-card">
                     <div class="action-icon">📝</div>
                     <h3>New Referral</h3>
-                    <p>Submit a new healthcare referral</p>
+                    <p>Submit a healthcare referral</p>
                 </a>
                 <a href="messages.php" class="action-card">
                     <div class="action-icon">💬</div>
                     <h3>Messages</h3>
                     <p>Chat with your doctor or clinic</p>
-                </a>
-                <a href="../pages/doctors.php" class="action-card">
-                    <div class="action-icon">👨‍⚕️</div>
-                    <h3>Find a Doctor</h3>
-                    <p>Search for healthcare providers</p>
-                </a>
-                <a href="../pages/hospitals.html" class="action-card">
-                    <div class="action-icon">🏥</div>
-                    <h3>Find a Clinic</h3>
-                    <p>Locate partner clinics near you</p>
                 </a>
             </div>
         </section>
@@ -235,7 +239,7 @@ try {
         <div>
             <h3>Quick links</h3>
             <ul class="footer-links">
-                <li><a href="../index.html">Home</a></li>
+                <li><a href="../pages/appointment.php">Book Visit</a></li>
                 <li><a href="../pages/referral.html">New Referral</a></li>
                 <li><a href="messages.php">Messages</a></li>
             </ul>
