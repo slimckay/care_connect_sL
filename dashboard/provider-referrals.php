@@ -2,6 +2,7 @@
 /**
  * Provider Referrals — Care Connect SL
  * Start care, mark done, set follow-up dates.
+ * Patients are notified on status changes.
  */
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -18,7 +19,6 @@ $user_id = (int)$_SESSION['user_id'];
 $message = '';
 $error = '';
 
-// Ensure follow_up columns exist
 try {
     $cols = $conn->query("SHOW COLUMNS FROM referrals LIKE 'follow_up_date'")->fetch();
     if (!$cols) {
@@ -28,9 +28,7 @@ try {
     if (!$cols2) {
         $conn->exec("ALTER TABLE referrals ADD COLUMN follow_up_notes TEXT NULL");
     }
-} catch (Exception $e) {
-    // continue; updates will try without column if needed
-}
+} catch (Exception $e) {}
 
 try {
     $u = $conn->prepare("SELECT name, email, role FROM users WHERE id = ? LIMIT 1");
@@ -57,18 +55,29 @@ function notifyAdminsDone(PDO $conn, int $referralId, string $patientName, strin
         if ($followUp) {
             $msg .= ' Follow-up scheduled for ' . $followUp . '.';
         }
-        $msg .= ' Review on Manage Referrals.';
-        $link = 'admin/manage-referrals.php?status=completed';
-
         $stmt = $conn->prepare("
             INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
-            VALUES (?, 'referral_completed', ?, ?, ?, 0, NOW())
+            VALUES (?, 'referral_completed', ?, ?, 'admin/manage-referrals.php?status=completed', 0, NOW())
         ");
         foreach ($admins as $admin) {
-            $stmt->execute([(int)$admin['id'], $title, $msg, $link]);
+            $stmt->execute([(int)$admin['id'], $title, $msg]);
         }
     } catch (Exception $e) {
         error_log('notifyAdminsDone: ' . $e->getMessage());
+    }
+}
+
+function notifyPatientStatus(PDO $conn, $ref, string $title, string $msg): void
+{
+    $patientUserId = (int)($ref['user_id'] ?? 0);
+    if ($patientUserId <= 0) return;
+    try {
+        $conn->prepare("
+            INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
+            VALUES (?, 'referral_status', ?, ?, 'dashboard/track-referrals.php', 0, NOW())
+        ")->execute([$patientUserId, $title, $msg]);
+    } catch (Exception $e) {
+        error_log('notifyPatientStatus: ' . $e->getMessage());
     }
 }
 
@@ -102,7 +111,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $conn->prepare("UPDATE referrals SET status = 'in_progress', updated_at = NOW() WHERE id = ?")
                              ->execute([$referralId]);
                     }
-                    $message = 'You started care for ' . $patientName . '.';
+                    notifyPatientStatus(
+                        $conn,
+                        $ref,
+                        'Care has started',
+                        $providerName . ' has started care for your referral #' . $referralId . '. Track progress in Track Referrals.'
+                    );
+                    $message = 'You started care for ' . $patientName . '. Patient notified.';
                 }
 
                 if ($action === 'done') {
@@ -128,7 +143,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     notifyAdminsDone($conn, $referralId, $patientName, $providerName, $followUpDate ?: null);
-                    $message = 'Marked as done. Admin has been notified.';
+                    $doneMsg = $providerName . ' marked your referral #' . $referralId . ' as completed.';
+                    if ($followUpDate) {
+                        $doneMsg .= ' Follow-up scheduled for ' . date('M d, Y', strtotime($followUpDate)) . '.';
+                    }
+                    notifyPatientStatus($conn, $ref, 'Referral completed', $doneMsg);
+                    $message = 'Marked as done. Patient and admin notified.';
                     if ($followUpDate) {
                         $message .= ' Follow-up set for ' . date('M d, Y', strtotime($followUpDate)) . '.';
                     }
@@ -147,9 +167,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     updated_at = NOW()
                                 WHERE id = ?
                             ")->execute([$followUpDate, $followUpNotes, $user_id, $referralId]);
+                            notifyPatientStatus(
+                                $conn,
+                                $ref,
+                                'Follow-up scheduled',
+                                'A follow-up was set for ' . date('M d, Y', strtotime($followUpDate)) . ' on referral #' . $referralId . '.'
+                            );
                             $message = 'Follow-up date saved for ' . $patientName . ' (' . date('M d, Y', strtotime($followUpDate)) . ').';
                         } catch (Exception $e) {
-                            $error = 'Could not save follow-up date. Database may need the follow_up_date column.';
+                            $error = 'Could not save follow-up date.';
                         }
                     }
                 }
@@ -167,7 +193,18 @@ $doneCases = [];
 $upcomingFollowUps = [];
 
 try {
-    $availableCases = $conn->query("SELECT * FROM referrals WHERE status = 'pending' ORDER BY created_at DESC LIMIT 50")->fetchAll();
+    try {
+        $stmt = $conn->prepare("
+            SELECT * FROM referrals
+            WHERE status = 'pending' AND (assigned_to = ? OR assigned_to IS NULL)
+            ORDER BY CASE WHEN assigned_to = ? THEN 0 ELSE 1 END, created_at DESC
+            LIMIT 50
+        ");
+        $stmt->execute([$user_id, $user_id]);
+        $availableCases = $stmt->fetchAll();
+    } catch (Exception $e) {
+        $availableCases = $conn->query("SELECT * FROM referrals WHERE status = 'pending' ORDER BY created_at DESC LIMIT 50")->fetchAll();
+    }
 
     try {
         $stmt = $conn->prepare("
@@ -193,7 +230,6 @@ try {
         $doneCases = $conn->query("SELECT * FROM referrals WHERE status = 'completed' ORDER BY created_at DESC LIMIT 20")->fetchAll();
     }
 
-    // Upcoming follow-ups (today and future)
     try {
         $stmt = $conn->prepare("
             SELECT * FROM referrals
@@ -245,59 +281,33 @@ function followUpLabel(?string $date): string
     .top h1 { margin:0 0 6px; font-size:1.7rem; color:#0F1C3A !important; }
     .top p { margin:0; color:#64748B !important; }
     .back { color:#1EB53A !important; font-weight:600; text-decoration:none; }
-
     .alert { padding:13px 16px; border-radius:12px; margin-bottom:16px; border:1px solid transparent; font-weight:600; }
     .alert.success { background:#ECFDF5; border-color:#A7F3D0; color:#065F46; }
     .alert.error { background:#FEF2F2; border-color:#FECACA; color:#991B1B; }
-
     .section-title { font-size:1.05rem; font-weight:700; color:#0F1C3A !important; margin:22px 0 12px; }
-
-    .case {
-      background:#fff; border:1px solid #E5E7EB; border-radius:16px;
-      padding:18px; margin-bottom:12px; box-shadow:0 6px 16px rgba(15,23,42,0.04);
-    }
+    .case { background:#fff; border:1px solid #E5E7EB; border-radius:16px; padding:18px; margin-bottom:12px; box-shadow:0 6px 16px rgba(15,23,42,0.04); }
     .case-head { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
     .case-head h3 { margin:0; font-size:1.05rem; color:#0F1C3A !important; }
     .meta { color:#64748B !important; font-size:0.9rem; line-height:1.5; }
     .cond { margin:10px 0 14px; color:#334155 !important; line-height:1.5; }
-    .follow-chip {
-      display:inline-block; margin-top:6px; padding:5px 10px; border-radius:999px;
-      background:#EEF2FF; color:#3730A3 !important; font-size:0.8rem; font-weight:700;
-    }
+    .follow-chip { display:inline-block; margin-top:6px; padding:5px 10px; border-radius:999px; background:#EEF2FF; color:#3730A3 !important; font-size:0.8rem; font-weight:700; }
     .follow-chip.due-soon { background:#FEF3C7; color:#B45309 !important; }
     .follow-chip.due-today { background:#FEE2E2; color:#B91C1C !important; }
-
     .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:0.75rem; font-weight:700; }
     .badge.pending { background:#FEF3C7; color:#B45309 !important; }
     .badge.in_progress { background:#DBEAFE; color:#1D4ED8 !important; }
     .badge.completed { background:#DCFCE7; color:#15803D !important; }
-
     .actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
     .btn { border:none; border-radius:999px; padding:10px 16px; font-weight:600; cursor:pointer; font-size:0.9rem; }
     .btn-main { background:linear-gradient(135deg,#1EB53A,#15803D); color:#fff !important; }
     .btn-done { background:#0F1C3A; color:#fff !important; }
     .btn-soft { background:#EEF2FF; color:#3730A3 !important; }
-
     .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
     .field-row label { display:block; font-size:0.82rem; font-weight:600; color:#475569 !important; margin-bottom:5px; }
-    .field-row input, .note-box textarea {
-      width:100%; border:1.5px solid #E5E7EB; border-radius:10px; padding:10px 12px; font:inherit;
-    }
+    .field-row input, .note-box textarea { width:100%; border:1.5px solid #E5E7EB; border-radius:10px; padding:10px 12px; font:inherit; }
     .note-box { width:100%; margin-top:10px; }
     .note-box textarea { min-height:70px; resize:vertical; }
-
-    .empty {
-      background:#fff; border:1px dashed #CBD5E1; border-radius:14px;
-      padding:22px; color:#64748B !important; text-align:center;
-    }
-
-    [data-theme="dark"] body { background:#0f172a; }
-    [data-theme="dark"] .top h1, [data-theme="dark"] .section-title, [data-theme="dark"] .case-head h3 { color:#F8FAFC !important; }
-    [data-theme="dark"] .case { background:#1e293b; border-color:#334155; }
-    [data-theme="dark"] .meta, [data-theme="dark"] .top p, [data-theme="dark"] .empty { color:#94A3B8 !important; }
-    [data-theme="dark"] .cond { color:#E2E8F0 !important; }
-    [data-theme="dark"] .field-row input, [data-theme="dark"] .note-box textarea { background:#0f172a; border-color:#334155; color:#E2E8F0; }
-
+    .empty { background:#fff; border:1px dashed #CBD5E1; border-radius:14px; padding:22px; color:#64748B !important; text-align:center; }
     @media (max-width:700px) { .field-row { grid-template-columns:1fr; } }
   </style>
 </head>
@@ -317,7 +327,7 @@ function followUpLabel(?string $date): string
   <div class="top">
     <a class="back" href="provider-dashboard.php">← Back to dashboard</a>
     <h1>My Patient Referrals</h1>
-    <p>Start care, mark patients done, and schedule follow-up dates.</p>
+    <p>Start care, mark patients done, and schedule follow-up dates. Patients see the same status on Track Referrals.</p>
   </div>
 
   <?php if ($message): ?><div class="alert success">✅ <?= htmlspecialchars($message) ?></div><?php endif; ?>
@@ -327,12 +337,11 @@ function followUpLabel(?string $date): string
   <?php if (empty($upcomingFollowUps)): ?>
     <div class="empty">No upcoming follow-up dates scheduled.</div>
   <?php else: ?>
-    <?php foreach ($upcomingFollowUps as $ref): ?>
-      <?php
-        $fu = $ref['follow_up_date'] ?? null;
-        $days = $fu ? (int)round((strtotime($fu) - strtotime(date('Y-m-d'))) / 86400) : 99;
-        $chipClass = $days === 0 ? 'due-today' : ($days <= 3 ? 'due-soon' : '');
-      ?>
+    <?php foreach ($upcomingFollowUps as $ref):
+      $fu = $ref['follow_up_date'] ?? null;
+      $days = $fu ? (int)round((strtotime($fu) - strtotime(date('Y-m-d'))) / 86400) : 99;
+      $chipClass = $days === 0 ? 'due-today' : ($days <= 3 ? 'due-soon' : '');
+    ?>
       <div class="case">
         <div class="case-head">
           <h3><?= htmlspecialchars($ref['patient_name'] ?? 'Patient') ?></h3>
@@ -368,7 +377,6 @@ function followUpLabel(?string $date): string
         <?php if (!empty($ref['follow_up_date'])): ?>
           <div class="follow-chip"><?= htmlspecialchars(followUpLabel($ref['follow_up_date'])) ?></div>
         <?php endif; ?>
-
         <form method="POST">
           <input type="hidden" name="referral_id" value="<?= (int)$ref['id'] ?>">
           <div class="field-row">
@@ -381,12 +389,10 @@ function followUpLabel(?string $date): string
               <input type="text" id="fn_<?= (int)$ref['id'] ?>" name="follow_up_notes" value="<?= htmlspecialchars($ref['follow_up_notes'] ?? '') ?>" placeholder="e.g. BP check, lab review">
             </div>
           </div>
-          <div class="note-box">
-            <textarea name="note" placeholder="Optional care summary for admin..."></textarea>
-          </div>
+          <div class="note-box"><textarea name="note" placeholder="Optional care summary..."></textarea></div>
           <div class="actions" style="margin-top:10px;">
             <button type="submit" name="action" value="set_follow_up" class="btn btn-soft">📅 Save Follow-up</button>
-            <button type="submit" name="action" value="done" class="btn btn-done" onclick="return confirm('Mark this patient as done? Admin will be notified.')">✅ Mark Patient as Done</button>
+            <button type="submit" name="action" value="done" class="btn btn-done" onclick="return confirm('Mark this patient as done? Patient will be notified.')">✅ Mark Patient as Done</button>
           </div>
         </form>
       </div>
@@ -407,6 +413,7 @@ function followUpLabel(?string $date): string
           <?= htmlspecialchars($ref['contact'] ?? 'No contact') ?>
           <?php if (!empty($ref['age'])): ?> · Age <?= (int)$ref['age'] ?><?php endif; ?>
           · <?= htmlspecialchars($ref['location'] ?? '-') ?>
+          <?php if (!empty($ref['assigned_to']) && (int)$ref['assigned_to'] === $user_id): ?> · <strong>Assigned to you</strong><?php endif; ?>
         </div>
         <div class="cond"><strong>Condition:</strong> <?= htmlspecialchars(conditionText($ref)) ?></div>
         <div class="actions">
@@ -440,7 +447,6 @@ function followUpLabel(?string $date): string
         <?php if (!empty($ref['notes'])): ?>
           <div class="meta"><strong>Note:</strong> <?= htmlspecialchars($ref['notes']) ?></div>
         <?php endif; ?>
-
         <form method="POST" style="margin-top:10px;">
           <input type="hidden" name="referral_id" value="<?= (int)$ref['id'] ?>">
           <input type="hidden" name="action" value="set_follow_up">
@@ -462,7 +468,6 @@ function followUpLabel(?string $date): string
     <?php endforeach; ?>
   <?php endif; ?>
 </main>
-
 <script src="../js/dark-mode.js"></script>
 </body>
 </html>
