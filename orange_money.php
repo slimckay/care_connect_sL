@@ -1,65 +1,188 @@
 <?php
 /**
- * Orange Money Integration - Care Connect SL
- * Requires the Orange Money PHP SDK: composer require youssouf/orange_money_php_sdk
+ * Orange Money — Care Connect SL
+ *
+ * Env vars (Render):
+ *   ORANGE_CLIENT_ID
+ *   ORANGE_CLIENT_SECRET
+ *   ORANGE_MERCHANT_KEY
+ *   ORANGE_PRODUCTION=1   (optional, default sandbox)
+ *   ORANGE_COUNTRY=sl     (API path segment; confirm with Orange SL)
+ *
+ * Flow:
+ *  1) Get OAuth token
+ *  2) Create web payment → payment_url
+ *  3) User pays on Orange page
+ *  4) Orange hits api/orange-callback.php → wallet credited
  */
 
-require_once __DIR__ . '/vendor/autoload.php';
+class OrangeMoney
+{
+    private string $clientId;
+    private string $clientSecret;
+    private string $merchantKey;
+    private bool $production;
+    private string $country;
+    private string $currency;
 
-use Donzo24\OrangeMoneySdk\OrangeMoneySdk;
-
-class OrangeMoney {
-    private $client;
-    private $config;
-    
-    public function __construct($config = []) {
-        $this->config = array_merge([
-            'clientId' => getenv('ORANGE_CLIENT_ID') ?: 'your_client_id',
-            'clientSecret' => getenv('ORANGE_CLIENT_SECRET') ?: 'your_client_secret',
-            'merchant_key' => getenv('ORANGE_MERCHANT_KEY') ?: 'your_merchant_key',
-            'currency' => 'SLL',
-            'lang' => 'en',
-            'reference' => 'Care Connect SL',
-            'production' => false // set to true for live
-        ], $config);
-        
-        $this->client = new OrangeMoneySdk($this->config);
+    public function __construct(array $config = [])
+    {
+        $this->clientId = $config['clientId'] ?? (getenv('ORANGE_CLIENT_ID') ?: '');
+        $this->clientSecret = $config['clientSecret'] ?? (getenv('ORANGE_CLIENT_SECRET') ?: '');
+        $this->merchantKey = $config['merchant_key'] ?? (getenv('ORANGE_MERCHANT_KEY') ?: '');
+        $this->production = (bool)($config['production'] ?? (getenv('ORANGE_PRODUCTION') === '1'));
+        $this->country = strtolower($config['country'] ?? (getenv('ORANGE_COUNTRY') ?: 'sl'));
+        $this->currency = $config['currency'] ?? (getenv('ORANGE_CURRENCY') ?: 'SLL');
     }
-    
-    /**
-     * Initiate a payment request
-     */
-    public function initiatePayment($order_id, $amount, $notif_url, $return_url, $cancel_url) {
-        try {
-            $response = $this->client->webPaymentTransactionInit([
-                'order_id' => $order_id,
-                'amount' => (string)$amount,
-                'notif_url' => $notif_url,
-                'return_url' => $return_url,
-                'cancel_url' => $cancel_url,
-            ]);
-            
-            if ($response) {
-                return [
-                    'success' => true,
-                    'payment_url' => $this->client->payment_url,
-                    'pay_token' => $this->client->pay_token,
-                    'notif_token' => $this->client->notif_token,
-                ];
-            }
-        } catch (Exception $e) {
-            error_log("Orange Money init error: " . $e->getMessage());
-            return ['success' => false, 'error' => $e->getMessage()];
+
+    public function isConfigured(): bool
+    {
+        return $this->clientId !== '' && $this->clientSecret !== '' && $this->merchantKey !== '';
+    }
+
+    private function baseApi(): string
+    {
+        // Same host; production flag is mainly merchant_key / Orange dashboard mode
+        return 'https://api.orange.com';
+    }
+
+    /** OAuth client_credentials token */
+    public function getAccessToken(): array
+    {
+        if (!$this->isConfigured()) {
+            return ['success' => false, 'error' => 'Orange Money credentials not set'];
         }
-        return ['success' => false, 'error' => 'Unknown error'];
+
+        $url = $this->baseApi() . '/oauth/v3/token';
+        $basic = base64_encode($this->clientId . ':' . $this->clientSecret);
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => 'grant_type=client_credentials',
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Basic ' . $basic,
+                'Content-Type: application/x-www-form-urlencoded',
+                'Accept: application/json',
+            ],
+            CURLOPT_TIMEOUT => 30,
+        ]);
+        $body = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($body === false) {
+            return ['success' => false, 'error' => 'Token request failed: ' . $err];
+        }
+
+        $data = json_decode($body, true);
+        if ($code >= 400 || empty($data['access_token'])) {
+            return [
+                'success' => false,
+                'error' => $data['error_description'] ?? ($data['error'] ?? 'OAuth failed'),
+                'http' => $code,
+            ];
+        }
+
+        return [
+            'success' => true,
+            'access_token' => $data['access_token'],
+            'expires_in' => $data['expires_in'] ?? null,
+        ];
     }
-    
+
     /**
-     * Verify payment status (optional)
+     * Start Orange Money Web Payment.
+     * Returns payment_url the user should open.
      */
-    public function verifyPayment($order_id) {
-        // Implement verification using Orange API if needed
-        return true;
+    public function initiatePayment(
+        string $orderId,
+        float $amount,
+        string $notifUrl,
+        string $returnUrl,
+        string $cancelUrl,
+        string $reference = 'Care Connect SL'
+    ): array {
+        if (!$this->isConfigured()) {
+            return ['success' => false, 'error' => 'Orange Money not configured', 'demo' => true];
+        }
+
+        $tokenRes = $this->getAccessToken();
+        if (empty($tokenRes['success'])) {
+            return $tokenRes;
+        }
+
+        $url = $this->baseApi() . '/orange-money-webpay/' . rawurlencode($this->country) . '/v1/webpayment';
+
+        $payload = [
+            'merchant_key' => $this->merchantKey,
+            'currency' => $this->currency,
+            'order_id' => $orderId,
+            'amount' => (int)round($amount),
+            'return_url' => $returnUrl,
+            'cancel_url' => $cancelUrl,
+            'notif_url' => $notifUrl,
+            'lang' => 'en',
+            'reference' => mb_substr($reference, 0, 50),
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $tokenRes['access_token'],
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            CURLOPT_TIMEOUT => 45,
+        ]);
+        $body = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($body === false) {
+            return ['success' => false, 'error' => 'Payment init failed: ' . $err];
+        }
+
+        $data = json_decode($body, true);
+        if ($code >= 400 || !is_array($data)) {
+            error_log('Orange webpay error HTTP ' . $code . ': ' . $body);
+            return [
+                'success' => false,
+                'error' => $data['message'] ?? ($data['error'] ?? 'Orange payment init failed'),
+                'http' => $code,
+                'raw' => $data,
+            ];
+        }
+
+        // Common response fields from Orange Web Pay
+        $paymentUrl = $data['payment_url'] ?? ($data['pay_url'] ?? null);
+        $payToken = $data['pay_token'] ?? ($data['payToken'] ?? null);
+        $notifToken = $data['notif_token'] ?? ($data['notifToken'] ?? null);
+
+        if (!$paymentUrl) {
+            return ['success' => false, 'error' => 'No payment_url from Orange', 'raw' => $data];
+        }
+
+        return [
+            'success' => true,
+            'payment_url' => $paymentUrl,
+            'pay_token' => $payToken,
+            'notif_token' => $notifToken,
+            'order_id' => $orderId,
+            'raw' => $data,
+        ];
+    }
+
+    /** Optional status check if Orange exposes transaction endpoint */
+    public function verifyPayment(string $orderId, ?string $payToken = null): array
+    {
+        // Status polling varies by market; rely on notif_url for truth.
+        return ['success' => true, 'order_id' => $orderId, 'note' => 'Use callback notification as source of truth'];
     }
 }
-?>
