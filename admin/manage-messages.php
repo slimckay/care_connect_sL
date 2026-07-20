@@ -4,8 +4,10 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    header('Location: ../login.php');
-    exit;
+    if (strtolower($_SESSION['role'] ?? '') !== 'admin') {
+        header('Location: ../login.php');
+        exit;
+    }
 }
 
 require_once '../db.php';
@@ -14,7 +16,6 @@ $adminName = $_SESSION['user_name'] ?? ($_SESSION['admin_name'] ?? 'Admin');
 $message = '';
 $error = '';
 
-// Mark message status
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int)($_POST['message_id'] ?? 0);
     $action = $_POST['action'] ?? '';
@@ -87,18 +88,18 @@ $active = 'messages';
     .msg-top { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
     .msg-top h3 { margin:0; font-size:1rem; color:#0F1C3A !important; }
     .msg-body { color:#334155 !important; line-height:1.55; margin:10px 0 14px; white-space:pre-wrap; }
-    .msg-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .msg-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
     .msg-actions form { display:inline; }
-    .msg-actions button {
+    .msg-actions button, .msg-actions a.action-btn {
       border:none; border-radius:999px; padding:8px 14px; font-weight:600; cursor:pointer; font-size:0.85rem;
+      text-decoration:none; display:inline-block;
     }
     .btn-read { background:#DBEAFE; color:#1D4ED8; }
     .btn-replied { background:#DCFCE7; color:#15803D; }
     .btn-new { background:#FEF3C7; color:#B45309; }
     .btn-del { background:#FEE2E2; color:#B91C1C; }
-    [data-theme="dark"] .msg-card { background:#1e293b; border-color:#334155; }
-    [data-theme="dark"] .msg-top h3 { color:#F8FAFC !important; }
-    [data-theme="dark"] .msg-body { color:#E2E8F0 !important; }
+    .btn-chat { background:#1EB53A; color:#fff !important; }
+    .btn-mail { background:#0F1C3A; color:#fff !important; }
   </style>
 </head>
 <body class="admin-body">
@@ -131,7 +132,7 @@ $active = 'messages';
       <div class="admin-card">
         <div class="card-header">
           <h2>Inbox</h2>
-          <span>Messages from the website contact form</span>
+          <span>Messages from the website contact form — open chat to reply & create referrals</span>
         </div>
 
         <?php if (empty($messages)): ?>
@@ -157,6 +158,10 @@ $active = 'messages';
               </div>
               <div class="msg-body"><?= htmlspecialchars($m['message'] ?? '') ?></div>
               <div class="msg-actions">
+                <a class="action-btn btn-chat" href="support-chat.php?id=<?= (int)$m['id'] ?>">Open chat & referral</a>
+                <?php if (!empty($m['email'])): ?>
+                  <a class="action-btn btn-mail" href="mailto:<?= htmlspecialchars($m['email']) ?>?subject=Care%20Connect%20SL%20Support">Reply by Email</a>
+                <?php endif; ?>
                 <?php if ($st !== 'read'): ?>
                   <form method="POST">
                     <input type="hidden" name="message_id" value="<?= (int)$m['id'] ?>">
@@ -171,21 +176,11 @@ $active = 'messages';
                     <button type="submit" class="btn-replied">Mark Replied</button>
                   </form>
                 <?php endif; ?>
-                <?php if ($st !== 'new'): ?>
-                  <form method="POST">
-                    <input type="hidden" name="message_id" value="<?= (int)$m['id'] ?>">
-                    <input type="hidden" name="action" value="new">
-                    <button type="submit" class="btn-new">Mark New</button>
-                  </form>
-                <?php endif; ?>
                 <form method="POST" onsubmit="return confirm('Delete this message?')">
                   <input type="hidden" name="message_id" value="<?= (int)$m['id'] ?>">
                   <input type="hidden" name="action" value="delete">
                   <button type="submit" class="btn-del">Delete</button>
                 </form>
-                <?php if (!empty($m['email'])): ?>
-                  <a href="mailto:<?= htmlspecialchars($m['email']) ?>" class="btn-admin" style="padding:8px 14px; border-radius:999px; font-size:0.85rem; text-decoration:none;">Reply by Email</a>
-                <?php endif; ?>
               </div>
             </div>
           <?php endforeach; ?>
