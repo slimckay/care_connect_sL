@@ -2,6 +2,7 @@
 /**
  * Referral Handler - Care Connect SL
  * Supports optional assigned_to (patient picks available doctor)
+ * Sends SMS status fallback when phone/contact is present
  */
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -56,7 +57,6 @@ if ($patient_name === '' || strlen($patient_name) < 2
     exit;
 }
 
-// Validate selected doctor if provided
 $assignedDoctorName = null;
 if ($assigned_to) {
     try {
@@ -68,7 +68,6 @@ if ($assigned_to) {
             exit;
         }
         $assignedDoctorName = $doc['name'];
-        // Fill preferred_clinic from doctor if empty
         if ($preferred_clinic === '') {
             try {
                 $ps = $conn->prepare("SELECT clinic_name FROM provider_profiles WHERE user_id = ? LIMIT 1");
@@ -86,6 +85,18 @@ if ($assigned_to) {
     } catch (Exception $e) {
         header('Location: pages/referral.html?error=doctor');
         exit;
+    }
+}
+
+function careConnectNotifyReferralSms(PDO $conn, string $phone, int $referralId): void
+{
+    if ($phone === '' || $referralId <= 0) return;
+    try {
+        require_once __DIR__ . '/sms_helper.php';
+        $sms = new SmsHelper($conn);
+        $sms->referralCreated($phone, $referralId, 'pending');
+    } catch (Exception $e) {
+        error_log('SMS on referral: ' . $e->getMessage());
     }
 }
 
@@ -154,7 +165,6 @@ try {
 
     $referralId = (int)$conn->lastInsertId();
 
-    // Notify selected doctor
     if ($assigned_to) {
         try {
             $conn->prepare("
@@ -168,7 +178,6 @@ try {
         } catch (Exception $e) {}
     }
 
-    // Notify admins
     try {
         $admins = $conn->query("SELECT id FROM users WHERE role = 'admin'")->fetchAll();
         $msg = $assignedDoctorName
@@ -181,7 +190,9 @@ try {
         }
     } catch (Exception $e) {}
 
-    $q = 'sent=1';
+    careConnectNotifyReferralSms($conn, $contact, $referralId);
+
+    $q = 'sent=1&ref=' . $referralId;
     if ($assigned_to) $q .= '&assigned=1';
     header('Location: pages/referral.html?' . $q);
     exit;
@@ -204,7 +215,9 @@ try {
             } else {
                 $stmt->execute([$patient_name, $age, $contact, $location, $condition]);
             }
-            $q = 'sent=1' . ($assigned_to ? '&assigned=1' : '');
+            $referralId = (int)$conn->lastInsertId();
+            careConnectNotifyReferralSms($conn, $contact, $referralId);
+            $q = 'sent=1&ref=' . $referralId . ($assigned_to ? '&assigned=1' : '');
             header('Location: pages/referral.html?' . $q);
             exit;
         } catch (Exception $inner) {
