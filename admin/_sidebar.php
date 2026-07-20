@@ -19,6 +19,7 @@ $active = $active ?? '';
     <a href="verify-providers.php" class="sb-item <?= $active === 'providers' ? 'active' : '' ?>">✅ Verify Providers</a>
 
     <div class="sb-section">System</div>
+    <a href="test-sms.php" class="sb-item <?= $active === 'settings' ? 'active' : '' ?>">📱 SMS test</a>
     <a href="admin-settings.php" class="sb-item <?= $active === 'settings' ? 'active' : '' ?>">⚙️ Settings</a>
     <a href="../logout.php" class="sb-item danger">🚪 Logout</a>
   </nav>
