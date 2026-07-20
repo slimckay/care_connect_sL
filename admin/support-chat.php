@@ -42,7 +42,189 @@ if (!empty($contact['email'])) {
     } catch (Exception $e) {}
 }
 
-// Quick referral create — schema-aware (contact not phone)
+/**
+ * Schema-safe referral insert used by admin support chat.
+ * Tries real columns first, then known fallbacks (contact vs phone, condition variants).
+ */
+function adminCreateReferral(PDO $conn, array $data): array
+{
+    $pname = trim((string)($data['patient_name'] ?? ''));
+    $contactVal = trim((string)($data['contact'] ?? ''));
+    $location = trim((string)($data['location'] ?? 'Freetown'));
+    $condition = trim((string)($data['condition'] ?? ''));
+    $assigned = (int)($data['assigned_to'] ?? 0);
+    $userId = isset($data['user_id']) ? (int)$data['user_id'] : null;
+    if ($userId !== null && $userId <= 0) $userId = null;
+
+    if ($pname === '' || strlen($pname) < 2) {
+        return ['ok' => false, 'error' => 'Patient name is required.'];
+    }
+    if ($contactVal === '') {
+        $contactVal = 'N/A';
+    }
+    if ($location === '') {
+        $location = 'Freetown';
+    }
+    if ($condition === '' || strlen($condition) < 3) {
+        return ['ok' => false, 'error' => 'Condition / need is required.'];
+    }
+
+    // Discover columns
+    $dbCols = [];
+    try {
+        foreach ($conn->query('SHOW COLUMNS FROM referrals')->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $dbCols[strtolower($c['Field'])] = $c['Field'];
+        }
+    } catch (Exception $e) {
+        $dbCols = [];
+    }
+
+    $conditionCol = null;
+    foreach (['medical_condition', 'condition', 'reason', 'symptoms', 'notes'] as $cand) {
+        if (isset($dbCols[$cand])) {
+            $conditionCol = $dbCols[$cand];
+            break;
+        }
+    }
+
+    // Prefer contact, else phone, else mobile
+    $contactCol = null;
+    foreach (['contact', 'phone', 'mobile', 'phone_number'] as $cand) {
+        if (isset($dbCols[$cand])) {
+            $contactCol = $dbCols[$cand];
+            break;
+        }
+    }
+
+    // Always start as pending — some DBs restrict status enums
+    $status = 'pending';
+
+    // Build dynamic insert from discovered columns only
+    if (!empty($dbCols) && $conditionCol) {
+        $fields = [];
+        $holders = [];
+        $params = [];
+
+        $put = function (string $logical, $value) use (&$fields, &$holders, &$params, $dbCols) {
+            if ($value === null) return;
+            if (!isset($dbCols[$logical])) return;
+            $fields[] = '`' . $dbCols[$logical] . '`';
+            $holders[] = '?';
+            $params[] = $value;
+        };
+
+        $put('patient_name', $pname);
+        if ($contactCol) {
+            $fields[] = '`' . $contactCol . '`';
+            $holders[] = '?';
+            $params[] = $contactVal;
+        }
+        $put('location', $location);
+        $put('status', $status);
+        $put('user_id', $userId);
+        $put('referrer', 'admin_support');
+
+        // condition
+        $fields[] = '`' . $conditionCol . '`';
+        $holders[] = '?';
+        $params[] = $condition;
+
+        if (isset($dbCols['created_at'])) {
+            $fields[] = '`' . $dbCols['created_at'] . '`';
+            $holders[] = 'NOW()';
+        }
+
+        if (count($fields) >= 3) {
+            try {
+                $sql = 'INSERT INTO referrals (' . implode(', ', $fields) . ') VALUES (' . implode(', ', $holders) . ')';
+                $conn->prepare($sql)->execute($params);
+                $newId = (int)$conn->lastInsertId();
+
+                // Assign after insert if requested
+                if ($assigned > 0 && $newId > 0 && isset($dbCols['assigned_to'])) {
+                    try {
+                        $upd = 'UPDATE referrals SET assigned_to = ?';
+                        $updParams = [$assigned];
+                        // only bump status if column accepts it
+                        if (isset($dbCols['status'])) {
+                            try {
+                                $conn->prepare('UPDATE referrals SET assigned_to = ?, status = ? WHERE id = ?')
+                                     ->execute([$assigned, 'in_progress', $newId]);
+                            } catch (Exception $e) {
+                                $conn->prepare('UPDATE referrals SET assigned_to = ? WHERE id = ?')
+                                     ->execute([$assigned, $newId]);
+                            }
+                        } else {
+                            $conn->prepare('UPDATE referrals SET assigned_to = ? WHERE id = ?')
+                                 ->execute([$assigned, $newId]);
+                        }
+                    } catch (Exception $e) {
+                        error_log('assign after insert: ' . $e->getMessage());
+                    }
+                }
+
+                return ['ok' => true, 'id' => $newId, 'assigned' => $assigned > 0];
+            } catch (Exception $e) {
+                error_log('adminCreateReferral dynamic failed: ' . $e->getMessage());
+                // fall through to attempts
+            }
+        }
+    }
+
+    // Explicit fallback attempts (mirrors referral.php resilience)
+    $attempts = [
+        [
+            'sql' => "INSERT INTO referrals (patient_name, contact, location, medical_condition, status, user_id) VALUES (?, ?, ?, ?, 'pending', ?)",
+            'params' => [$pname, $contactVal, $location, $condition, $userId],
+        ],
+        [
+            'sql' => "INSERT INTO referrals (patient_name, contact, location, `condition`, status, user_id) VALUES (?, ?, ?, ?, 'pending', ?)",
+            'params' => [$pname, $contactVal, $location, $condition, $userId],
+        ],
+        [
+            'sql' => "INSERT INTO referrals (patient_name, contact, location, medical_condition, status) VALUES (?, ?, ?, ?, 'pending')",
+            'params' => [$pname, $contactVal, $location, $condition],
+        ],
+        [
+            'sql' => "INSERT INTO referrals (patient_name, contact, location, `condition`, status) VALUES (?, ?, ?, ?, 'pending')",
+            'params' => [$pname, $contactVal, $location, $condition],
+        ],
+        [
+            'sql' => "INSERT INTO referrals (patient_name, contact, location, medical_condition) VALUES (?, ?, ?, ?)",
+            'params' => [$pname, $contactVal, $location, $condition],
+        ],
+        [
+            'sql' => "INSERT INTO referrals (patient_name, contact, location, `condition`) VALUES (?, ?, ?, ?)",
+            'params' => [$pname, $contactVal, $location, $condition],
+        ],
+    ];
+
+    $lastError = 'Unknown database error';
+    foreach ($attempts as $i => $attempt) {
+        try {
+            $conn->prepare($attempt['sql'])->execute($attempt['params']);
+            $newId = (int)$conn->lastInsertId();
+
+            if ($assigned > 0 && $newId > 0) {
+                try {
+                    $conn->prepare('UPDATE referrals SET assigned_to = ? WHERE id = ?')->execute([$assigned, $newId]);
+                    try {
+                        $conn->prepare("UPDATE referrals SET status = 'in_progress' WHERE id = ?")->execute([$newId]);
+                    } catch (Exception $e) {}
+                } catch (Exception $e) {}
+            }
+
+            return ['ok' => true, 'id' => $newId, 'assigned' => $assigned > 0];
+        } catch (Exception $e) {
+            $lastError = $e->getMessage();
+            error_log("adminCreateReferral fallback $i failed: " . $lastError);
+        }
+    }
+
+    return ['ok' => false, 'error' => $lastError];
+}
+
+// Quick referral create
 $refMsg = '';
 $refErr = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'create_referral') {
@@ -52,101 +234,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
     $condition = trim($_POST['condition'] ?? ($contact['message'] ?? ''));
     $assigned = (int)($_POST['assigned_to'] ?? 0);
 
-    if ($pname === '' || $condition === '') {
-        $refErr = 'Name and condition are required.';
-    } elseif ($location === '') {
-        $refErr = 'Location is required.';
-    } else {
-        try {
-            $dbCols = [];
+    $result = adminCreateReferral($conn, [
+        'patient_name' => $pname,
+        'contact' => $phone !== '' ? $phone : ($contact['phone'] ?? 'N/A'),
+        'location' => $location,
+        'condition' => $condition,
+        'assigned_to' => $assigned,
+        'user_id' => $matchedUser ? (int)$matchedUser['id'] : null,
+    ]);
+
+    if (!empty($result['ok'])) {
+        $newId = (int)$result['id'];
+        $refMsg = 'Referral #' . $newId . ' created'
+            . (!empty($result['assigned']) ? ' and assigned to doctor.' : ' (pending pool).');
+
+        if ($assigned > 0) {
             try {
-                foreach ($conn->query('SHOW COLUMNS FROM referrals')->fetchAll(PDO::FETCH_ASSOC) as $c) {
-                    $dbCols[strtolower($c['Field'])] = $c['Field'];
-                }
-            } catch (Exception $e) {
-                $dbCols = [];
-            }
-
-            $conditionCol = null;
-            if (isset($dbCols['medical_condition'])) $conditionCol = $dbCols['medical_condition'];
-            elseif (isset($dbCols['condition'])) $conditionCol = $dbCols['condition'];
-            elseif (isset($dbCols['reason'])) $conditionCol = $dbCols['reason'];
-
-            $uid = $matchedUser ? (int)$matchedUser['id'] : null;
-            $status = $assigned > 0 ? 'in_progress' : 'pending';
-
-            $fields = [];
-            $placeholders = [];
-            $params = [];
-
-            $map = [
-                'patient_name' => $pname,
-                'contact' => ($phone !== '' ? $phone : ($contact['phone'] ?? 'N/A')),
-                'phone' => ($phone !== '' ? $phone : null), // only if column exists
-                'location' => $location,
-                'status' => $status,
-                'user_id' => $uid,
-                'assigned_to' => ($assigned > 0 ? $assigned : null),
-                'email' => ($contact['email'] ?? null),
-                'referrer' => 'admin_support',
-            ];
-
-            foreach ($map as $key => $val) {
-                if ($val === null) continue;
-                if (!isset($dbCols[$key])) continue;
-                $fields[] = '`' . $dbCols[$key] . '`';
-                $placeholders[] = '?';
-                $params[] = $val;
-            }
-
-            if ($conditionCol !== null) {
-                $fields[] = '`' . $conditionCol . '`';
-                $placeholders[] = '?';
-                $params[] = $condition;
-            }
-
-            if (isset($dbCols['created_at'])) {
-                $fields[] = '`' . $dbCols['created_at'] . '`';
-                $placeholders[] = 'NOW()';
-            }
-
-            if (empty($fields) || $conditionCol === null) {
-                // Minimal fallback matching referral.php
-                $sql = "INSERT INTO referrals (patient_name, contact, location, medical_condition, status)
-                        VALUES (?, ?, ?, ?, ?)";
-                $conn->prepare($sql)->execute([
-                    $pname,
-                    $phone !== '' ? $phone : 'N/A',
-                    $location,
-                    $condition,
-                    $status,
-                ]);
-            } else {
-                $sql = 'INSERT INTO referrals (' . implode(', ', $fields) . ') VALUES (' . implode(', ', $placeholders) . ')';
-                $conn->prepare($sql)->execute($params);
-            }
-
-            $newId = (int)$conn->lastInsertId();
-            $refMsg = 'Referral #' . $newId . ' created' . ($assigned > 0 ? ' and assigned to doctor.' : ' (pending pool).');
-
-            if ($assigned > 0) {
-                try {
-                    $conn->prepare("INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
-                                    VALUES (?, 'referral_assigned', 'New referral for you', ?, 'dashboard/provider-referrals.php', 0, NOW())")
-                         ->execute([
-                             $assigned,
-                             'Admin created a referral for ' . $pname . ' from support chat.',
-                         ]);
-                } catch (Exception $e) {}
-            }
-
-            try {
-                $conn->prepare("UPDATE contact_messages SET status = 'replied', updated_at = NOW() WHERE id = ?")
-                     ->execute([$contactId]);
+                $conn->prepare("INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
+                                VALUES (?, 'referral_assigned', 'New referral for you', ?, 'dashboard/provider-referrals.php', 0, NOW())")
+                     ->execute([
+                         $assigned,
+                         'Admin created a referral for ' . $pname . ' from support chat.',
+                     ]);
             } catch (Exception $e) {}
-        } catch (Exception $e) {
-            $refErr = 'Could not create referral: ' . $e->getMessage();
         }
+
+        try {
+            $conn->prepare("UPDATE contact_messages SET status = 'replied', updated_at = NOW() WHERE id = ?")
+                 ->execute([$contactId]);
+        } catch (Exception $e) {
+            try {
+                $conn->prepare("UPDATE contact_messages SET status = 'replied' WHERE id = ?")
+                     ->execute([$contactId]);
+            } catch (Exception $e2) {}
+        }
+    } else {
+        $refErr = 'Could not create referral: ' . ($result['error'] ?? 'Unknown error');
     }
 }
 
@@ -250,7 +373,7 @@ $active = 'messages';
               <label>Patient name</label>
               <input name="patient_name" value="<?= htmlspecialchars($contact['name'] ?? '') ?>" required>
               <label>Phone / contact</label>
-              <input name="phone" value="<?= htmlspecialchars($contact['phone'] ?? '') ?>">
+              <input name="phone" value="<?= htmlspecialchars($contact['phone'] ?? '') ?>" placeholder="e.g. 031078546">
               <label>Location</label>
               <input name="location" value="Freetown" required>
               <label>Condition / need</label>
