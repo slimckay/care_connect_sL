@@ -2,6 +2,7 @@
 /**
  * Patient Referral Tracking — Care Connect SL
  * Timeline: Pending → In progress → Completed
+ * Patients only see their own cases (not doctor-only referral queue).
  */
 if (session_status() === PHP_SESSION_NONE) session_start();
 
@@ -13,7 +14,6 @@ if (!isset($_SESSION['user_id']) || strtolower($_SESSION['role'] ?? '') !== 'pat
 require_once __DIR__ . '/../db.php';
 
 $userId = (int)$_SESSION['user_id'];
-$userName = $_SESSION['user_name'] ?? 'Patient';
 $filter = $_GET['status'] ?? 'all';
 
 $rows = [];
@@ -93,7 +93,6 @@ if ($filter !== 'all') {
     }
     .filters a.active { background:#0F1C3A; color:#fff !important; border-color:#0F1C3A; }
     .filters a span { opacity:.75; margin-left:4px; }
-
     .card {
       background:#fff; border:1px solid #E5E7EB; border-radius:18px; padding:18px 18px 16px;
       margin-bottom:14px; box-shadow:0 6px 18px rgba(15,23,42,.04);
@@ -102,14 +101,11 @@ if ($filter !== 'all') {
     .card-top h3 { margin:0; font-size:1.05rem; color:#0F1C3A !important; }
     .meta { color:#64748B; font-size:.9rem; margin-top:4px; line-height:1.45; }
     .cond { margin:12px 0 16px; color:#334155; line-height:1.5; font-size:.95rem; }
-
     .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:.75rem; font-weight:700; }
     .badge.pending { background:#FEF3C7; color:#92400E; }
     .badge.in_progress { background:#DBEAFE; color:#1D4ED8; }
     .badge.completed { background:#DCFCE7; color:#166534; }
     .badge.cancelled { background:#F1F5F9; color:#64748B; }
-
-    /* Timeline */
     .timeline {
       display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; position:relative; margin:8px 0 4px;
     }
@@ -130,22 +126,15 @@ if ($filter !== 'all') {
     .step label { display:block; font-size:.72rem; font-weight:600; color:#94A3B8; }
     .step.on label, .step.done label { color:#166534; }
     .step.cancelled-note { grid-column:1 / -1; text-align:center; color:#991B1B; font-size:.85rem; font-weight:600; }
-
     .footer-row { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center; }
     .provider { font-size:.88rem; color:#475569; }
     .links a { color:#1EB53A !important; font-weight:600; font-size:.88rem; text-decoration:none; margin-left:10px; }
-
     .empty {
       text-align:center; padding:40px 16px; background:#fff; border-radius:16px; border:1px solid #E5E7EB; color:#64748B;
     }
     .btn-new {
       display:inline-block; margin-top:12px; background:#1EB53A; color:#fff !important; padding:10px 18px;
       border-radius:999px; font-weight:700; text-decoration:none;
-    }
-
-    @media (max-width:520px) {
-      .timeline::before { left:18%; right:18%; }
-      .step label { font-size:.68rem; }
     }
   </style>
 </head>
@@ -155,6 +144,7 @@ if ($filter !== 'all') {
     <a href="../index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
     <div class="nav-actions">
       <a href="patient-dashboard.php" class="btn-ghost">Dashboard</a>
+      <a href="../pages/pay.php" class="btn-ghost">Pay</a>
       <a href="../pages/referral.html" class="btn-primary">New referral</a>
       <a href="../logout.php" class="btn-ghost btn-logout">Log out</a>
     </div>
@@ -162,8 +152,8 @@ if ($filter !== 'all') {
 </header>
 
 <main class="wrap">
-  <h1>📍 Track your referrals</h1>
-  <p class="sub">See where each request is — from submitted to care completed.</p>
+  <h1>Track your referrals</h1>
+  <p class="sub">Your cases only — status updates. Full referral queue stays with doctors for confidentiality.</p>
 
   <div class="filters">
     <a href="?status=all" class="<?= $filter === 'all' ? 'active' : '' ?>">All <span><?= (int)$counts['all'] ?></span></a>
@@ -185,12 +175,14 @@ if ($filter !== 'all') {
       $provider = $r['provider_name'] ?? '';
       $created = !empty($r['created_at']) ? date('M j, Y · g:i A', strtotime($r['created_at'])) : '';
       $follow = $r['follow_up_date'] ?? null;
+      $assigned = (int)($r['assigned_to'] ?? 0);
+      $rid = (int)$r['id'];
     ?>
       <article class="card">
         <div class="card-top">
           <div>
             <h3><?= htmlspecialchars($r['patient_name'] ?? 'Patient') ?></h3>
-            <div class="meta">#<?= (int)$r['id'] ?> · <?= htmlspecialchars($created) ?><?php if (!empty($r['location'])): ?> · <?= htmlspecialchars($r['location']) ?><?php endif; ?></div>
+            <div class="meta">#<?= $rid ?> · <?= htmlspecialchars($created) ?><?php if (!empty($r['location'])): ?> · <?= htmlspecialchars($r['location']) ?><?php endif; ?></div>
           </div>
           <span class="badge <?= htmlspecialchars($st) ?>"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $st))) ?></span>
         </div>
@@ -228,10 +220,14 @@ if ($filter !== 'all') {
             <?php endif; ?>
           </div>
           <div class="links">
-            <?php if ($provider && !empty($r['assigned_to'])): ?>
-              <a href="messages.php?provider=<?= (int)$r['assigned_to'] ?>">Message</a>
+            <?php if ($assigned > 0): ?>
+              <a href="messages.php?start=<?= $assigned ?>">Message</a>
+              <a href="../pages/pay.php?provider=<?= $assigned ?>&referral=<?= $rid ?>">Pay</a>
+              <a href="../pages/appointment.php?doctor=<?= $assigned ?>">Book visit</a>
+            <?php else: ?>
+              <a href="../pages/pay.php?referral=<?= $rid ?>">Pay</a>
+              <a href="../pages/appointment.php">Book visit</a>
             <?php endif; ?>
-            <a href="../pages/appointment.php<?= !empty($r['assigned_to']) ? '?doctor='.(int)$r['assigned_to'] : '' ?>"">Book visit</a>
           </div>
         </div>
       </article>
