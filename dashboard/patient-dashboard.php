@@ -2,7 +2,6 @@
 /**
  * Patient Dashboard - Care Connect SL
  */
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -30,7 +29,7 @@ if ($_SESSION['role'] !== 'patient') {
 
 require_once '../db.php';
 
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 
 $totalReferrals = 0;
@@ -106,14 +105,12 @@ try {
 
 <header role="banner">
     <div class="nav-inner">
-        <a href="../index.html" class="logo" aria-label="Care Connect SL Home">
-            Care<span class="accent">Connect</span> SL
-        </a>
+        <a href="../index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
         <nav aria-label="Main navigation">
             <ul class="nav-links" role="menubar">
                 <li><a href="../index.html" role="menuitem">Home</a></li>
                 <li><a href="../pages/doctors.php" role="menuitem">Find Care</a></li>
-                <li><a href="../pages/appointment.php" role="menuitem">Book Visit</a></li>
+                <li><a href="track-referrals.php" role="menuitem">Track</a></li>
                 <li><a href="../pages/referral.html" role="menuitem">New Referral</a></li>
                 <li><a href="messages.php" role="menuitem">Messages</a></li>
             </ul>
@@ -130,11 +127,11 @@ try {
         <section class="dashboard-welcome">
             <div class="welcome-content">
                 <h1>Welcome back, <?php echo htmlspecialchars($user_name); ?>! 👋</h1>
-                <p>Here's an overview of your healthcare journey on Care Connect SL.</p>
+                <p>Your care overview — referrals, visits, and messages.</p>
             </div>
             <div class="welcome-actions">
-                <a href="../pages/appointment.php" class="btn-primary">📅 Book Visit</a>
-                <a href="../pages/referral.html" class="btn-ghost">➕ Referral</a>
+                <a href="../pages/referral.html" class="btn-primary">➕ New Referral</a>
+                <a href="track-referrals.php" class="btn-ghost">📍 Track</a>
                 <a href="messages.php" class="btn-ghost">💬 Messages</a>
             </div>
         </section>
@@ -143,36 +140,37 @@ try {
             <div class="stat-card stat-total">
                 <div class="stat-icon">📋</div>
                 <div class="stat-info">
-                    <span class="stat-number"><?php echo $totalReferrals; ?></span>
-                    <span class="stat-label">Total Referrals</span>
+                    <span class="stat-number"><?php echo (int)$totalReferrals; ?></span>
+                    <span class="stat-label">Your Referrals</span>
                 </div>
             </div>
             <div class="stat-card stat-pending">
                 <div class="stat-icon">⏳</div>
                 <div class="stat-info">
-                    <span class="stat-number"><?php echo $pendingReferrals; ?></span>
+                    <span class="stat-number"><?php echo (int)$pendingReferrals; ?></span>
                     <span class="stat-label">Pending</span>
                 </div>
             </div>
             <div class="stat-card stat-progress">
                 <div class="stat-icon">📅</div>
                 <div class="stat-info">
-                    <span class="stat-number"><?php echo $upcomingAppts; ?></span>
+                    <span class="stat-number"><?php echo (int)$upcomingAppts; ?></span>
                     <span class="stat-label">Upcoming Visits</span>
                 </div>
             </div>
             <div class="stat-card stat-completed">
                 <div class="stat-icon">✅</div>
                 <div class="stat-info">
-                    <span class="stat-number"><?php echo $completedReferrals; ?></span>
+                    <span class="stat-number"><?php echo (int)$completedReferrals; ?></span>
                     <span class="stat-label">Completed</span>
                 </div>
             </div>
         </section>
 
         <section class="dashboard-card">
-            <div class="card-header">
-                <h2>📋 Recent Referrals</h2>
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                <h2>📋 Your recent referrals</h2>
+                <a href="track-referrals.php" style="color:#1EB53A;font-weight:600;text-decoration:none;font-size:.9rem;">View all →</a>
             </div>
             <div class="card-body">
                 <?php if (!empty($recentReferrals)): ?>
@@ -205,25 +203,35 @@ try {
         <section class="quick-actions">
             <h2>⚡ Quick Actions</h2>
             <div class="action-grid">
+                <a href="track-referrals.php" class="action-card">
+                    <div class="action-icon">📍</div>
+                    <h3>Track Referrals</h3>
+                    <p>Status of cases you submitted</p>
+                </a>
                 <a href="../pages/appointment.php" class="action-card">
                     <div class="action-icon">📅</div>
                     <h3>Book Visit</h3>
                     <p>Home visit or clinic appointment</p>
                 </a>
-                <a href="my-appointments.php" class="action-card">
-                    <div class="action-icon">🗓️</div>
-                    <h3>My Appointments</h3>
-                    <p>Track upcoming and past visits</p>
+                <a href="messages.php" class="action-card">
+                    <div class="action-icon">💬</div>
+                    <h3>Messages</h3>
+                    <p>Chat with your doctor</p>
+                </a>
+                <a href="../pages/pay.php" class="action-card">
+                    <div class="action-icon">💳</div>
+                    <h3>Pay for care</h3>
+                    <p>Pay doctor — platform fee applied</p>
+                </a>
+                <a href="../wallet.php" class="action-card">
+                    <div class="action-icon">💰</div>
+                    <h3>Wallet</h3>
+                    <p>Add funds & history</p>
                 </a>
                 <a href="../pages/referral.html" class="action-card">
                     <div class="action-icon">📝</div>
                     <h3>New Referral</h3>
                     <p>Submit a healthcare referral</p>
-                </a>
-                <a href="messages.php" class="action-card">
-                    <div class="action-icon">💬</div>
-                    <h3>Messages</h3>
-                    <p>Chat with your doctor or clinic</p>
                 </a>
             </div>
         </section>
@@ -239,7 +247,7 @@ try {
         <div>
             <h3>Quick links</h3>
             <ul class="footer-links">
-                <li><a href="../pages/appointment.php">Book Visit</a></li>
+                <li><a href="track-referrals.php">Track</a></li>
                 <li><a href="../pages/referral.html">New Referral</a></li>
                 <li><a href="messages.php">Messages</a></li>
             </ul>
@@ -247,7 +255,6 @@ try {
         <div>
             <h3>Contact</h3>
             <p><a href="mailto:hello@careconnect.sl">hello@careconnect.sl</a></p>
-            <p><a href="tel:+23276000000">+232 76 000 000</a></p>
         </div>
     </div>
     <p class="footer-note">&copy; 2026 Care Connect SL. All rights reserved.</p>

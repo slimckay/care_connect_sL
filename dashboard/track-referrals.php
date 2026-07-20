@@ -1,8 +1,8 @@
 <?php
 /**
  * Patient Referral Tracking — Care Connect SL
- * Timeline: Pending → In progress → Completed
- * Patients only see their own cases (not doctor-only referral queue).
+ * STRICT: only referrals submitted by this logged-in patient (user_id).
+ * patient_name may differ if they referred a family member under their account.
  */
 if (session_status() === PHP_SESSION_NONE) session_start();
 
@@ -14,12 +14,16 @@ if (!isset($_SESSION['user_id']) || strtolower($_SESSION['role'] ?? '') !== 'pat
 require_once __DIR__ . '/../db.php';
 
 $userId = (int)$_SESSION['user_id'];
+$userName = $_SESSION['user_name'] ?? 'Patient';
 $filter = $_GET['status'] ?? 'all';
 
-$rows = [];
+// STRICT ownership — never show other accounts' referrals
+rows = [];
 try {
     $sql = "
-        SELECT r.*,
+        SELECT r.id, r.patient_name, r.status, r.created_at, r.location, r.assigned_to,
+               r.follow_up_date,
+               COALESCE(r.`condition`, r.medical_condition, '') AS condition_text,
                u.name AS provider_name
         FROM referrals r
         LEFT JOIN users u ON u.id = r.assigned_to
@@ -32,16 +36,22 @@ try {
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     try {
-        $stmt = $conn->prepare("SELECT * FROM referrals WHERE user_id = ? ORDER BY created_at DESC LIMIT 100");
+        $stmt = $conn->prepare("
+            SELECT r.*, u.name AS provider_name
+            FROM referrals r
+            LEFT JOIN users u ON u.id = r.assigned_to
+            WHERE r.user_id = ?
+            ORDER BY r.created_at DESC LIMIT 100
+        ");
         $stmt->execute([$userId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$rr) {
+            $rr['condition_text'] = $rr['condition'] ?? ($rr['medical_condition'] ?? '');
+        }
+        unset($rr);
     } catch (Exception $e2) {
         $rows = [];
     }
-}
-
-function conditionOf(array $r): string {
-    return $r['condition'] ?? ($r['medical_condition'] ?? ($r['reason'] ?? 'Not provided'));
 }
 
 function normalizeStatus(string $s): string {
@@ -85,7 +95,7 @@ if ($filter !== 'all') {
     body { background:#F4F7FB; }
     .wrap { max-width:860px; margin:28px auto 56px; padding:0 16px; }
     h1 { margin:0 0 6px; font-size:1.6rem; color:#0F1C3A !important; }
-    .sub { margin:0 0 18px; color:#64748B; }
+    .sub { margin:0 0 18px; color:#64748B; line-height:1.5; }
     .filters { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
     .filters a {
       text-decoration:none; padding:8px 14px; border-radius:999px; font-size:.88rem; font-weight:600;
@@ -94,7 +104,7 @@ if ($filter !== 'all') {
     .filters a.active { background:#0F1C3A; color:#fff !important; border-color:#0F1C3A; }
     .filters a span { opacity:.75; margin-left:4px; }
     .card {
-      background:#fff; border:1px solid #E5E7EB; border-radius:18px; padding:18px 18px 16px;
+      background:#fff; border:1px solid #E5E7EB; border-radius:18px; padding:18px;
       margin-bottom:14px; box-shadow:0 6px 18px rgba(15,23,42,.04);
     }
     .card-top { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start; }
@@ -106,12 +116,8 @@ if ($filter !== 'all') {
     .badge.in_progress { background:#DBEAFE; color:#1D4ED8; }
     .badge.completed { background:#DCFCE7; color:#166534; }
     .badge.cancelled { background:#F1F5F9; color:#64748B; }
-    .timeline {
-      display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; position:relative; margin:8px 0 4px;
-    }
-    .timeline::before {
-      content:''; position:absolute; left:16%; right:16%; top:14px; height:3px; background:#E5E7EB; z-index:0;
-    }
+    .timeline { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; position:relative; margin:8px 0 4px; }
+    .timeline::before { content:''; position:absolute; left:16%; right:16%; top:14px; height:3px; background:#E5E7EB; z-index:0; }
     .step { text-align:center; position:relative; z-index:1; }
     .dot {
       width:28px; height:28px; border-radius:50%; margin:0 auto 8px;
@@ -119,9 +125,7 @@ if ($filter !== 'all') {
       background:#E5E7EB; color:#94A3B8; font-size:.75rem; font-weight:700;
       border:3px solid #fff; box-shadow:0 0 0 1px #E5E7EB;
     }
-    .step.on .dot, .step.done .dot {
-      background:#1EB53A; color:#fff; box-shadow:0 0 0 1px #1EB53A;
-    }
+    .step.on .dot, .step.done .dot { background:#1EB53A; color:#fff; box-shadow:0 0 0 1px #1EB53A; }
     .step.done .dot { background:#15803D; }
     .step label { display:block; font-size:.72rem; font-weight:600; color:#94A3B8; }
     .step.on label, .step.done label { color:#166534; }
@@ -129,13 +133,9 @@ if ($filter !== 'all') {
     .footer-row { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center; }
     .provider { font-size:.88rem; color:#475569; }
     .links a { color:#1EB53A !important; font-weight:600; font-size:.88rem; text-decoration:none; margin-left:10px; }
-    .empty {
-      text-align:center; padding:40px 16px; background:#fff; border-radius:16px; border:1px solid #E5E7EB; color:#64748B;
-    }
-    .btn-new {
-      display:inline-block; margin-top:12px; background:#1EB53A; color:#fff !important; padding:10px 18px;
-      border-radius:999px; font-weight:700; text-decoration:none;
-    }
+    .empty { text-align:center; padding:40px 16px; background:#fff; border-radius:16px; border:1px solid #E5E7EB; color:#64748B; }
+    .btn-new { display:inline-block; margin-top:12px; background:#1EB53A; color:#fff !important; padding:10px 18px; border-radius:999px; font-weight:700; text-decoration:none; }
+    .note { background:#F8FAFC; border:1px solid #E5E7EB; border-radius:12px; padding:10px 12px; font-size:.85rem; color:#64748B; margin-bottom:16px; }
   </style>
 </head>
 <body>
@@ -144,7 +144,6 @@ if ($filter !== 'all') {
     <a href="../index.html" class="logo">Care<span class="accent">Connect</span> SL</a>
     <div class="nav-actions">
       <a href="patient-dashboard.php" class="btn-ghost">Dashboard</a>
-      <a href="../pages/pay.php" class="btn-ghost">Pay</a>
       <a href="../pages/referral.html" class="btn-primary">New referral</a>
       <a href="../logout.php" class="btn-ghost btn-logout">Log out</a>
     </div>
@@ -153,7 +152,9 @@ if ($filter !== 'all') {
 
 <main class="wrap">
   <h1>Track your referrals</h1>
-  <p class="sub">Your cases only — status updates. Full referral queue stays with doctors for confidentiality.</p>
+  <p class="sub">Only referrals <strong>you</strong> submitted while logged in as <?= htmlspecialchars($userName) ?>. Other patients' cases never appear here.</p>
+
+  <div class="note">If a card shows a different name (e.g. a relative), that means <em>you</em> submitted a referral for them under your account. Doctors see the clinical queue separately.</div>
 
   <div class="filters">
     <a href="?status=all" class="<?= $filter === 'all' ? 'active' : '' ?>">All <span><?= (int)$counts['all'] ?></span></a>
@@ -171,28 +172,33 @@ if ($filter !== 'all') {
     <?php foreach ($rows as $r):
       $st = normalizeStatus($r['status'] ?? 'pending');
       $idx = stepIndex($st);
-      $cond = conditionOf($r);
+      $cond = $r['condition_text'] ?? ($r['condition'] ?? ($r['medical_condition'] ?? 'Not provided'));
       $provider = $r['provider_name'] ?? '';
       $created = !empty($r['created_at']) ? date('M j, Y · g:i A', strtotime($r['created_at'])) : '';
       $follow = $r['follow_up_date'] ?? null;
       $assigned = (int)($r['assigned_to'] ?? 0);
       $rid = (int)$r['id'];
+      $forName = $r['patient_name'] ?? 'Patient';
     ?>
       <article class="card">
         <div class="card-top">
           <div>
-            <h3><?= htmlspecialchars($r['patient_name'] ?? 'Patient') ?></h3>
-            <div class="meta">#<?= $rid ?> · <?= htmlspecialchars($created) ?><?php if (!empty($r['location'])): ?> · <?= htmlspecialchars($r['location']) ?><?php endif; ?></div>
+            <h3><?= htmlspecialchars($forName) ?></h3>
+            <div class="meta">
+              Referral #<?= $rid ?> · Submitted by you
+              <?php if (!empty($created)): ?> · <?= htmlspecialchars($created) ?><?php endif; ?>
+              <?php if (!empty($r['location'])): ?> · <?= htmlspecialchars($r['location']) ?><?php endif; ?>
+            </div>
           </div>
           <span class="badge <?= htmlspecialchars($st) ?>"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $st))) ?></span>
         </div>
 
-        <div class="cond"><?= htmlspecialchars(mb_substr($cond, 0, 180)) ?><?= mb_strlen($cond) > 180 ? '…' : '' ?></div>
+        <div class="cond"><?= htmlspecialchars(mb_substr((string)$cond, 0, 180)) ?><?= mb_strlen((string)$cond) > 180 ? '…' : '' ?></div>
 
         <?php if ($st === 'cancelled'): ?>
           <div class="timeline"><div class="step cancelled-note">This referral was cancelled</div></div>
         <?php else: ?>
-          <div class="timeline" aria-label="Referral progress">
+          <div class="timeline">
             <div class="step <?= $idx >= 0 ? 'done' : '' ?> <?= $idx === 0 ? 'on' : '' ?>">
               <div class="dot"><?= $idx > 0 ? '✓' : '1' ?></div>
               <label>Pending</label>
@@ -225,7 +231,6 @@ if ($filter !== 'all') {
               <a href="../pages/pay.php?provider=<?= $assigned ?>&referral=<?= $rid ?>">Pay</a>
               <a href="../pages/appointment.php?doctor=<?= $assigned ?>">Book visit</a>
             <?php else: ?>
-              <a href="../pages/pay.php?referral=<?= $rid ?>">Pay</a>
               <a href="../pages/appointment.php">Book visit</a>
             <?php endif; ?>
           </div>
