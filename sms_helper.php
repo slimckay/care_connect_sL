@@ -6,13 +6,10 @@
  *   SMS_ENABLED=1
  *   SMS_PROVIDER=africastalking
  *   AT_USERNAME=your_app_username     (live) or sandbox (test)
- *   AT_API_KEY=your_api_key
- *   AT_FROM=CareConnect               (optional approved sender ID)
- *   AT_SANDBOX=0                      (1 = sandbox API host only)
+ *   AT_API_KEY=your_api_key           (must match sandbox vs live)
+ *   AT_FROM=                          (optional approved sender ID)
+ *   AT_SANDBOX=0                      (1 = sandbox host)
  *   APP_PUBLIC_URL=https://care-connect-sl-1.onrender.com
- *
- * If AT_USERNAME + AT_API_KEY are set → LIVE send (unless SMS_ENABLED=0).
- * If missing → demo log only.
  */
 
 class SmsHelper
@@ -26,9 +23,10 @@ class SmsHelper
     {
         $this->conn = $conn;
         $this->enabled = getenv('SMS_ENABLED') !== '0';
-        $hasKeys = (bool)(getenv('AT_USERNAME') && getenv('AT_API_KEY'));
-        $configured = strtolower(getenv('SMS_PROVIDER') ?: '');
-        // Auto-use Africa's Talking when keys exist
+        $user = trim((string)getenv('AT_USERNAME'), " \t\"'");
+        $key = trim((string)getenv('AT_API_KEY'), " \t\"'");
+        $hasKeys = ($user !== '' && $key !== '');
+        $configured = strtolower(trim((string)(getenv('SMS_PROVIDER') ?: '')));
         if ($hasKeys && ($configured === '' || $configured === 'africastalking')) {
             $this->provider = 'africastalking';
         } else {
@@ -52,19 +50,20 @@ class SmsHelper
 
     public function isLive(): bool
     {
-        return $this->provider === 'africastalking'
-            && (bool)getenv('AT_USERNAME')
-            && (bool)getenv('AT_API_KEY')
-            && $this->enabled;
+        $user = trim((string)getenv('AT_USERNAME'), " \t\"'");
+        $key = trim((string)getenv('AT_API_KEY'), " \t\"'");
+        return $this->provider === 'africastalking' && $user !== '' && $key !== '' && $this->enabled;
     }
 
     public function modeLabel(): string
     {
         if (!$this->enabled) return 'disabled';
-        return $this->isLive() ? 'live' : 'demo';
+        if (!$this->isLive()) return 'demo';
+        $user = strtolower(trim((string)getenv('AT_USERNAME'), " \t\"'"));
+        $sandbox = getenv('AT_SANDBOX') === '1' || $user === 'sandbox';
+        return $sandbox ? 'sandbox' : 'live';
     }
 
-    /** Normalise SL numbers → 232… */
     public static function normalizePhone(string $phone): string
     {
         $p = preg_replace('/[^0-9+]/', '', $phone);
@@ -72,18 +71,9 @@ class SmsHelper
         if (str_starts_with($p, '00')) {
             $p = substr($p, 2);
         }
-        // 076123456 / 76123456 → 23276123456
         if (preg_match('/^0?([2-9]\d{7,9})$/', $p, $m)) {
             $local = $m[1];
-            if (!str_starts_with($local, '232')) {
-                $p = '232' . $local;
-            } else {
-                $p = $local;
-            }
-        }
-        // already 232…
-        if (str_starts_with($p, '232') && strlen($p) >= 11) {
-            return $p;
+            $p = str_starts_with($local, '232') ? $local : ('232' . $local);
         }
         return $p;
     }
@@ -110,7 +100,7 @@ class SmsHelper
                 'ok' => true,
                 'demo' => true,
                 'provider' => 'log',
-                'message' => 'Demo only — add AT_USERNAME + AT_API_KEY on Render for live SMS.',
+                'message' => 'Demo only — add AT_USERNAME + AT_API_KEY on Render for real SMS.',
             ];
         }
 
@@ -132,9 +122,9 @@ class SmsHelper
 
     private function sendAfricaTalking(string $phone, string $message): array
     {
-        $username = trim((string)getenv('AT_USERNAME'));
-        $apiKey = trim((string)getenv('AT_API_KEY'));
-        $from = trim((string)(getenv('AT_FROM') ?: ''));
+        $username = trim((string)getenv('AT_USERNAME'), " \t\"'");
+        $apiKey = trim((string)getenv('AT_API_KEY'), " \t\"'");
+        $from = trim((string)(getenv('AT_FROM') ?: ''), " \t\"'");
 
         $to = '+' . ltrim($phone, '+');
         $post = [
@@ -142,10 +132,7 @@ class SmsHelper
             'to' => $to,
             'message' => $message,
         ];
-        // Only send from if approved sender ID configured
-        if ($from !== '' && strtolower($from) !== 'careconnect') {
-            $post['from'] = $from;
-        } elseif ($from !== '') {
+        if ($from !== '') {
             $post['from'] = $from;
         }
 
@@ -172,30 +159,47 @@ class SmsHelper
         curl_close($ch);
 
         if ($body === false) {
-            return ['ok' => false, 'provider' => 'africastalking', 'error' => 'cURL: ' . $err];
+            return ['ok' => false, 'provider' => 'africastalking', 'sandbox' => $sandbox, 'error' => 'cURL: ' . $err];
         }
 
         $data = json_decode($body, true);
-        // AT returns 201 on success typically
-        $recipients = $data['SMSMessageData']['Recipients'] ?? [];
+        $recipients = is_array($data) ? ($data['SMSMessageData']['Recipients'] ?? []) : [];
         $firstStatus = $recipients[0]['status'] ?? null;
         $firstCode = isset($recipients[0]['statusCode']) ? (int)$recipients[0]['statusCode'] : null;
-        // statusCode 101 = processed / success in AT docs
         $recipientOk = $firstCode === 100 || $firstCode === 101 || strtolower((string)$firstStatus) === 'success';
 
         $httpOk = $code >= 200 && $code < 300;
-        $ok = $httpOk && ($recipientOk || empty($recipients));
+        $ok = $httpOk && ($recipientOk || (empty($recipients) && $httpOk && is_array($data)));
+
+        $errorMsg = null;
+        if (!$ok) {
+            if ($code === 401) {
+                $errorMsg = '401 Unauthorized: wrong API key or username, or sandbox key mixed with live (or reverse). '
+                    . 'In Africa\'s Talking: open your app → Settings → API Key → generate new key. '
+                    . 'Sandbox pair: AT_USERNAME=sandbox, sandbox API key, AT_SANDBOX=1. '
+                    . 'Live pair: production app username, production API key, AT_SANDBOX=0. '
+                    . 'No quotes/spaces in Render env values.';
+            } elseif ($code === 403) {
+                $errorMsg = '403 Forbidden — SMS not enabled on app or no credits.';
+            } else {
+                $errorMsg = is_array($data)
+                    ? ($data['SMSMessageData']['Message'] ?? ($data['message'] ?? $data['errorMessage'] ?? 'SMS send failed'))
+                    : ('HTTP ' . $code . ': ' . mb_substr((string)$body, 0, 200));
+            }
+        }
 
         return [
             'ok' => $ok,
             'provider' => 'africastalking',
             'sandbox' => $sandbox,
             'http' => $code,
+            'username_used' => $username,
             'to' => $to,
             'status' => $firstStatus,
             'statusCode' => $firstCode,
             'raw' => $data,
-            'error' => $ok ? null : ($data['SMSMessageData']['Message'] ?? ($data['message'] ?? 'SMS send failed')),
+            'raw_body' => is_array($data) ? null : mb_substr((string)$body, 0, 300),
+            'error' => $errorMsg,
         ];
     }
 
