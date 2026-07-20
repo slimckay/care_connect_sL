@@ -1,7 +1,7 @@
 <?php
 /**
  * Lightweight unread check for phone popup notifications
- * Returns new message / referral counts for the logged-in user
+ * Referral alerts are DOCTOR/HOSPITAL only (confidentiality).
  */
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -31,7 +31,6 @@ $out = [
 ];
 
 try {
-    // Unread chat messages
     if (in_array($role, ['patient', 'doctor', 'hospital'], true)) {
         if ($role === 'patient') {
             $sql = "
@@ -40,8 +39,7 @@ try {
                 JOIN conversations c ON c.id = m.conversation_id
                 JOIN users u ON u.id = m.sender_id
                 WHERE c.patient_id = ? AND m.sender_id != ? AND m.is_read = 0
-                ORDER BY m.id DESC
-                LIMIT 1
+                ORDER BY m.id DESC LIMIT 1
             ";
             $cntSql = "
                 SELECT COUNT(*) AS c FROM chat_messages m
@@ -55,8 +53,7 @@ try {
                 JOIN conversations c ON c.id = m.conversation_id
                 JOIN users u ON u.id = m.sender_id
                 WHERE c.provider_id = ? AND m.sender_id != ? AND m.is_read = 0
-                ORDER BY m.id DESC
-                LIMIT 1
+                ORDER BY m.id DESC LIMIT 1
             ";
             $cntSql = "
                 SELECT COUNT(*) AS c FROM chat_messages m
@@ -82,21 +79,17 @@ try {
                     'created_at' => $row['created_at'],
                 ];
             }
-        } catch (Exception $e) {
-            // chat tables may not exist yet
-        }
+        } catch (Exception $e) {}
     }
 
-    // New referrals for doctors / admin-ish provider view
+    // CONFIDENTIAL: referral case alerts only for doctors / hospitals — never patients
     if (in_array($role, ['doctor', 'hospital'], true)) {
         try {
-            // Assigned to this provider and still pending (or recently created)
             $r = $conn->prepare("
                 SELECT id, patient_name, status, created_at
                 FROM referrals
                 WHERE assigned_to = ? AND status = 'pending'
-                ORDER BY id DESC
-                LIMIT 1
+                ORDER BY id DESC LIMIT 1
             ");
             $r->execute([$userId]);
             $ref = $r->fetch(PDO::FETCH_ASSOC);
@@ -116,20 +109,8 @@ try {
                     'created_at' => $ref['created_at'],
                 ];
             }
-        } catch (Exception $e) {
-            // try open-pool pending as secondary signal for doctors
-            try {
-                $rc = $conn->prepare("SELECT COUNT(*) AS c FROM referrals WHERE status = 'pending' AND (assigned_to IS NULL OR assigned_to = 0)");
-                $rc->execute();
-                // don't overwrite assigned count if set; only use as soft signal when zero
-                if ($out['referrals_new'] === 0) {
-                    // leave 0 — open pool shouldn't spam all doctors
-                }
-            } catch (Exception $e2) {}
-        }
+        } catch (Exception $e) {}
     }
-
-    // Patients: optional pending referral status updates could be added later
 } catch (Exception $e) {
     error_log('notify-check: ' . $e->getMessage());
 }
