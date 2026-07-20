@@ -42,7 +42,7 @@ if (!empty($contact['email'])) {
     } catch (Exception $e) {}
 }
 
-// Quick referral create
+// Quick referral create — schema-aware (contact not phone)
 $refMsg = '';
 $refErr = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'create_referral') {
@@ -54,50 +54,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
 
     if ($pname === '' || $condition === '') {
         $refErr = 'Name and condition are required.';
+    } elseif ($location === '') {
+        $refErr = 'Location is required.';
     } else {
         try {
-            $uid = $matchedUser ? (int)$matchedUser['id'] : null;
-            $cols = 'patient_name, phone, location, status, created_at';
-            $vals = '?, ?, ?, ?, NOW()';
-            $params = [$pname, $phone, $location, $assigned > 0 ? 'in_progress' : 'pending'];
-
-            // condition column variants
+            $dbCols = [];
             try {
-                $conn->query('SELECT `condition` FROM referrals LIMIT 1');
-                $cols .= ', `condition`';
-                $vals .= ', ?';
-                $params[] = $condition;
+                foreach ($conn->query('SHOW COLUMNS FROM referrals')->fetchAll(PDO::FETCH_ASSOC) as $c) {
+                    $dbCols[strtolower($c['Field'])] = $c['Field'];
+                }
             } catch (Exception $e) {
-                try {
-                    $conn->query('SELECT medical_condition FROM referrals LIMIT 1');
-                    $cols .= ', medical_condition';
-                    $vals .= ', ?';
-                    $params[] = $condition;
-                } catch (Exception $e2) {}
+                $dbCols = [];
             }
 
-            if ($uid) {
-                $cols .= ', user_id';
-                $vals .= ', ?';
-                $params[] = $uid;
+            $conditionCol = null;
+            if (isset($dbCols['medical_condition'])) $conditionCol = $dbCols['medical_condition'];
+            elseif (isset($dbCols['condition'])) $conditionCol = $dbCols['condition'];
+            elseif (isset($dbCols['reason'])) $conditionCol = $dbCols['reason'];
+
+            $uid = $matchedUser ? (int)$matchedUser['id'] : null;
+            $status = $assigned > 0 ? 'in_progress' : 'pending';
+
+            $fields = [];
+            $placeholders = [];
+            $params = [];
+
+            $map = [
+                'patient_name' => $pname,
+                'contact' => ($phone !== '' ? $phone : ($contact['phone'] ?? 'N/A')),
+                'phone' => ($phone !== '' ? $phone : null), // only if column exists
+                'location' => $location,
+                'status' => $status,
+                'user_id' => $uid,
+                'assigned_to' => ($assigned > 0 ? $assigned : null),
+                'email' => ($contact['email'] ?? null),
+                'referrer' => 'admin_support',
+            ];
+
+            foreach ($map as $key => $val) {
+                if ($val === null) continue;
+                if (!isset($dbCols[$key])) continue;
+                $fields[] = '`' . $dbCols[$key] . '`';
+                $placeholders[] = '?';
+                $params[] = $val;
             }
+
+            if ($conditionCol !== null) {
+                $fields[] = '`' . $conditionCol . '`';
+                $placeholders[] = '?';
+                $params[] = $condition;
+            }
+
+            if (isset($dbCols['created_at'])) {
+                $fields[] = '`' . $dbCols['created_at'] . '`';
+                $placeholders[] = 'NOW()';
+            }
+
+            if (empty($fields) || $conditionCol === null) {
+                // Minimal fallback matching referral.php
+                $sql = "INSERT INTO referrals (patient_name, contact, location, medical_condition, status)
+                        VALUES (?, ?, ?, ?, ?)";
+                $conn->prepare($sql)->execute([
+                    $pname,
+                    $phone !== '' ? $phone : 'N/A',
+                    $location,
+                    $condition,
+                    $status,
+                ]);
+            } else {
+                $sql = 'INSERT INTO referrals (' . implode(', ', $fields) . ') VALUES (' . implode(', ', $placeholders) . ')';
+                $conn->prepare($sql)->execute($params);
+            }
+
+            $newId = (int)$conn->lastInsertId();
+            $refMsg = 'Referral #' . $newId . ' created' . ($assigned > 0 ? ' and assigned to doctor.' : ' (pending pool).');
+
             if ($assigned > 0) {
-                $cols .= ', assigned_to';
-                $vals .= ', ?';
-                $params[] = $assigned;
-            }
-            if (!empty($contact['email'])) {
                 try {
-                    $conn->query('SELECT email FROM referrals LIMIT 1');
-                    $cols .= ', email';
-                    $vals .= ', ?';
-                    $params[] = $contact['email'];
+                    $conn->prepare("INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
+                                    VALUES (?, 'referral_assigned', 'New referral for you', ?, 'dashboard/provider-referrals.php', 0, NOW())")
+                         ->execute([
+                             $assigned,
+                             'Admin created a referral for ' . $pname . ' from support chat.',
+                         ]);
                 } catch (Exception $e) {}
             }
-
-            $conn->prepare("INSERT INTO referrals ($cols) VALUES ($vals)")->execute($params);
-            $newId = (int)$conn->lastInsertId();
-            $refMsg = 'Referral #' . $newId . ' created' . ($assigned ? ' and assigned.' : ' (pending pool).');
 
             try {
                 $conn->prepare("UPDATE contact_messages SET status = 'replied', updated_at = NOW() WHERE id = ?")
@@ -208,7 +249,7 @@ $active = 'messages';
               <input type="hidden" name="action" value="create_referral">
               <label>Patient name</label>
               <input name="patient_name" value="<?= htmlspecialchars($contact['name'] ?? '') ?>" required>
-              <label>Phone</label>
+              <label>Phone / contact</label>
               <input name="phone" value="<?= htmlspecialchars($contact['phone'] ?? '') ?>">
               <label>Location</label>
               <input name="location" value="Freetown" required>
@@ -240,7 +281,7 @@ $active = 'messages';
   const input = document.getElementById('msgInput');
   const btn = document.getElementById('sendBtn');
 
-  function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[c])); }
   function fmt(ts){ if(!ts)return''; const d=new Date(String(ts).replace(' ','T')); return isNaN(d)?ts:d.toLocaleString(); }
 
   function addBubble(m){
