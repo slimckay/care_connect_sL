@@ -55,17 +55,9 @@ if ($type === 'consultation' && $providerId <= 0) {
     exit;
 }
 
-// Stripe unit amount in the smallest currency unit
-// Using USD cents for demo compatibility unless STRIPE_CURRENCY is set otherwise.
-// Map: charge the card for a converted amount; internal ledger uses amount_sll metadata.
 $currency = STRIPE_CURRENCY;
-// Simple fixed conversion placeholder for demo (adjust for production FX)
-// 1 USD ≈ 22 SLL historically was wrong; use metadata as source of truth for wallet.
-// For testing: charge amount_sll as if major units * 100 in chosen currency (e.g. 50000 → 50000 cents if using a zero-decimal approach).
-// Safer test default: charge $1.00 minimum style — use amount in cents from a USD mapping of SLL/22000 approx.
-$usdCents = max(50, (int)round(($amountSll / 22000) * 100)); // rough SLL→USD for card charge
+$usdCents = max(50, (int)round(($amountSll / 22000) * 100));
 if ($currency === 'sll') {
-    // If Stripe supports SLL on the account, charge whole SLL (zero-decimal currencies list varies)
     $unitAmount = (int)round($amountSll);
 } else {
     $unitAmount = $usdCents;
@@ -118,14 +110,12 @@ $params = [
     ],
 ];
 
-// Flatten for application/x-www-form-urlencoded Stripe API
 function stripeFlatten(array $data, string $prefix = ''): array
 {
     $out = [];
     foreach ($data as $k => $v) {
         $key = $prefix === '' ? $k : $prefix . '[' . $k . ']';
         if (is_array($v)) {
-            // numeric arrays
             $isList = array_keys($v) === range(0, count($v) - 1);
             if ($isList) {
                 foreach ($v as $i => $item) {
@@ -166,12 +156,12 @@ if ($response === false) {
     exit;
 }
 
-data = json_decode($response, true);
+$data = json_decode($response, true);
 if ($httpCode >= 400 || !is_array($data)) {
     http_response_code(502);
     echo json_encode([
         'ok' => false,
-        'error' => $data['error']['message'] ?? 'Stripe error',
+        'error' => is_array($data) ? ($data['error']['message'] ?? 'Stripe error') : 'Stripe error',
         'stripe_status' => $httpCode,
     ]);
     exit;
