@@ -11,6 +11,7 @@ $active = $active ?? '';
     <div class="sb-section">Overview</div>
     <a href="admin-dashboard.php" class="sb-item <?= $active === 'dashboard' ? 'active' : '' ?>">📊 Dashboard</a>
     <a href="notifications.php" class="sb-item <?= $active === 'notifications' ? 'active' : '' ?>">🔔 Notifications</a>
+    <a href="payment-history.php" class="sb-item <?= $active === 'payments' ? 'active' : '' ?>">💰 Payments</a>
 
     <div class="sb-section">Manage</div>
     <a href="manage-referrals.php" class="sb-item <?= $active === 'referrals' ? 'active' : '' ?>">📋 Referrals</a>
@@ -19,7 +20,7 @@ $active = $active ?? '';
     <a href="verify-providers.php" class="sb-item <?= $active === 'providers' ? 'active' : '' ?>">✅ Verify Providers</a>
 
     <div class="sb-section">System</div>
-    <a href="test-sms.php" class="sb-item <?= $active === 'settings' ? 'active' : '' ?>">📱 SMS test</a>
+    <a href="test-sms.php" class="sb-item <?= $active === 'sms' ? 'active' : '' ?>">📱 SMS test</a>
     <a href="admin-settings.php" class="sb-item <?= $active === 'settings' ? 'active' : '' ?>">⚙️ Settings</a>
     <a href="../logout.php" class="sb-item danger">🚪 Logout</a>
   </nav>
