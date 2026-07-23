@@ -96,6 +96,7 @@ body {
   font-size: 0.9rem;
   transition: all 0.18s ease;
   margin-bottom: 3px;
+  position: relative;
 }
 
 .admin-sidebar .sb-item:hover {
@@ -112,6 +113,28 @@ body {
 .admin-sidebar .sb-item.danger {
   color: #F87171 !important;
   margin-top: 12px;
+}
+
+/* Count badges on sidebar links */
+.admin-sidebar .sb-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #EF4444;
+  color: #ffffff !important;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(10, 22, 40, 0.9);
+}
+
+.admin-sidebar .sb-item.active .sb-badge {
+  background: #F87171;
 }
 
 /* ---------- Main ---------- */
