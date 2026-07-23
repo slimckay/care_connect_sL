@@ -9,6 +9,8 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../db.php';
+require_once __DIR__ . '/_badge_seen.php';
+admin_mark_seen('users'); // opening Users clears the badge
 
 $admin_name = $_SESSION['user_name'] ?? ($_SESSION['admin_name'] ?? 'Admin');
 $message = '';
