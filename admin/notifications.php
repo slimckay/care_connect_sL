@@ -9,19 +9,26 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../db.php';
+require_once __DIR__ . '/_badge_seen.php';
 
 $adminName = $_SESSION['user_name'] ?? ($_SESSION['admin_name'] ?? 'Admin');
 $adminId = (int)($_SESSION['user_id'] ?? 0);
 $message = '';
 $error = '';
 
-// Mark notifications read
+// Opening this page clears the Notifications badge
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    admin_clear_notifications($conn, $adminId);
+}
+
+// Mark notifications read (manual actions still work)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     try {
         if ($action === 'mark_all_read' && $adminId > 0) {
             $conn->prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ?")->execute([$adminId]);
             $message = 'All notifications marked as read.';
+            admin_mark_seen('notifications');
         } elseif ($action === 'mark_read') {
             $id = (int)($_POST['notification_id'] ?? 0);
             if ($id > 0) {
