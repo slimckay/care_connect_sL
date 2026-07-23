@@ -9,6 +9,8 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../db.php';
+require_once __DIR__ . '/_badge_seen.php';
+admin_mark_seen('referrals'); // opening page clears badge
 
 // Ensure follow-up columns exist
 try {
