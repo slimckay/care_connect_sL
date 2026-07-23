@@ -2,7 +2,9 @@
 // Shared admin sidebar — set $active before including
 $active = $active ?? '';
 
-// Badge counts (safe if $conn missing or tables absent)
+require_once __DIR__ . '/_badge_seen.php';
+
+// Badge counts = only items not yet "seen" (opened)
 $sbBadges = [
     'messages' => 0,
     'notifications' => 0,
@@ -12,12 +14,14 @@ $sbBadges = [
 ];
 
 if (isset($conn) && $conn instanceof PDO) {
+    // Messages: still status = new (cleared when inbox is opened)
     try {
         $sbBadges['messages'] = (int)$conn->query(
             "SELECT COUNT(*) FROM contact_messages WHERE status = 'new'"
         )->fetchColumn();
     } catch (Exception $e) {}
 
+    // Notifications: unread for this admin
     try {
         $adminId = (int)($_SESSION['user_id'] ?? 0);
         if ($adminId > 0) {
@@ -26,40 +30,66 @@ if (isset($conn) && $conn instanceof PDO) {
             );
             $st->execute([$adminId]);
             $sbBadges['notifications'] = (int)$st->fetchColumn();
-        } else {
-            // Fallback: any unread admin-role notifications in last 30 days
-            $sbBadges['notifications'] = (int)$conn->query(
-                "SELECT COUNT(*) FROM notifications n
-                 JOIN users u ON u.id = n.user_id
-                 WHERE u.role = 'admin' AND (n.is_read = 0 OR n.is_read IS NULL)"
-            )->fetchColumn();
         }
     } catch (Exception $e) {}
 
+    // Users: registered after last time admin opened Users page
     try {
-        // New users in last 7 days
-        $sbBadges['users'] = (int)$conn->query(
-            "SELECT COUNT(*) FROM users
-             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)"
-        )->fetchColumn();
+        $since = admin_last_seen('users');
+        if ($since === null) {
+            // First time: only last 24h so history does not flood the badge
+            $sbBadges['users'] = (int)$conn->query(
+                "SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)"
+            )->fetchColumn();
+        } else {
+            $st = $conn->prepare("SELECT COUNT(*) FROM users WHERE created_at > ?");
+            $st->execute([$since]);
+            $sbBadges['users'] = (int)$st->fetchColumn();
+        }
+    } catch (Exception $e) {}
+
+    // Referrals: pending created after last open of Referrals
+    try {
+        $since = admin_last_seen('referrals');
+        if ($since === null) {
+            $sbBadges['referrals'] = (int)$conn->query(
+                "SELECT COUNT(*) FROM referrals WHERE status = 'pending'"
+            )->fetchColumn();
+        } else {
+            $st = $conn->prepare(
+                "SELECT COUNT(*) FROM referrals WHERE status = 'pending' AND created_at > ?"
+            );
+            $st->execute([$since]);
+            $sbBadges['referrals'] = (int)$st->fetchColumn();
+        }
+    } catch (Exception $e) {}
+
+    // Providers pending verification after last open of Verify page
+    try {
+        $since = admin_last_seen('providers');
+        if ($since === null) {
+            $sbBadges['providers'] = (int)$conn->query(
+                "SELECT COUNT(*) FROM provider_profiles WHERE verification_status = 'pending'"
+            )->fetchColumn();
+        } else {
+            // created_at or updated_at into pending
+            $st = $conn->prepare(
+                "SELECT COUNT(*) FROM provider_profiles
+                 WHERE verification_status = 'pending'
+                   AND COALESCE(updated_at, created_at) > ?"
+            );
+            $st->execute([$since]);
+            $sbBadges['providers'] = (int)$st->fetchColumn();
+        }
     } catch (Exception $e) {
         try {
-            // Some schemas may not have created_at
-            $sbBadges['users'] = 0;
+            if (admin_last_seen('providers') === null) {
+                $sbBadges['providers'] = (int)$conn->query(
+                    "SELECT COUNT(*) FROM provider_profiles WHERE verification_status = 'pending'"
+                )->fetchColumn();
+            }
         } catch (Exception $e2) {}
     }
-
-    try {
-        $sbBadges['referrals'] = (int)$conn->query(
-            "SELECT COUNT(*) FROM referrals WHERE status = 'pending'"
-        )->fetchColumn();
-    } catch (Exception $e) {}
-
-    try {
-        $sbBadges['providers'] = (int)$conn->query(
-            "SELECT COUNT(*) FROM provider_profiles WHERE verification_status = 'pending'"
-        )->fetchColumn();
-    } catch (Exception $e) {}
 }
 
 function admin_badge(int $n): string
