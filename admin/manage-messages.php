@@ -11,6 +11,12 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 require_once '../db.php';
+require_once __DIR__ . '/_badge_seen.php';
+
+// Opening inbox clears the Messages badge (mark all "new" → "read")
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    admin_clear_new_messages($conn);
+}
 
 $adminName = $_SESSION['user_name'] ?? ($_SESSION['admin_name'] ?? 'Admin');
 $message = '';
